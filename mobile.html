@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Modelo Estrutural de Substratos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap');
+:root {
+  --bg: #0c0e0c;
+  --surface: #131513;
+  --card: #181b18;
+  --border: #252a25;
+  --green: #6fcf7a;
+  --green-dim: #3d6b43;
+  --amber: #e8c96a;
+  --red: #e87a6a;
+  --blue: #6ab4e8;
+  --purple: #cc88ff;
+  --text: #cdd4cd;
+  --text-dim: #6a7a6a;
+  --radius: 8px;
+  --tab-h: 58px;
+  --header-h: 52px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ─────────────────────────────────────── */
+.mob-header {
+  height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.mob-header h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 15px;
+  font-weight: 300;
+  color: #fff;
+  line-height: 1.2;
+}
+.mob-header .sub {
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+.btn-sobre-mob {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  padding: 5px 9px;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .2s, color .2s;
+  flex-shrink: 0;
+}
+
+/* ── MAIN CONTENT AREA ───────────────────────────── */
+.mob-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+.tab-panel {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: none;
+  padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 8px);
+}
+.tab-panel.active { display: block; }
+
+/* ── TAB BAR ─────────────────────────────────────── */
+.tab-bar {
+  height: calc(var(--tab-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color .15s;
+  padding: 8px 4px 0;
+}
+.tab-btn .tab-icon { font-size: 18px; line-height: 1; }
+.tab-btn.active { color: var(--green); }
+.tab-btn.active .tab-icon { filter: drop-shadow(0 0 4px rgba(111,207,122,.5)); }
+
+/* ── COMPONENTS TAB ──────────────────────────────── */
+.section-block { padding: 14px 14px 8px; border-bottom: 1px solid var(--border); }
+.section-label {
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.quadrant-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+.q-cell {
+  border-radius: 6px;
+  padding: 9px 10px;
+  font-size: 10px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: background .15s;
+}
+.q-cell:active { background: rgba(255,255,255,.06); }
+.q-info-btn {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.13);
+  color: rgba(255,255,255,.35); font-size: 9px; line-height: 16px; text-align: center;
+  flex-shrink: 0; font-family: 'DM Mono', monospace; cursor: pointer; user-select: none;
+}
+
+/* ingredient list */
+.ing-list { display: flex; flex-direction: column; gap: 8px; }
+.ing-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  position: relative;
+}
+.ing-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ing-name-tap {
+  flex: 1;
+  color: var(--text);
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  border-bottom: 1px solid var(--border);
+  padding: 2px 3px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: text;
+}
+.btn-remove-mob {
+  background: none; border: none; color: var(--text-dim);
+  font-size: 18px; line-height: 1; padding: 2px 4px;
+  cursor: pointer; flex-shrink: 0;
+}
+.ing-card-bottom {
+  display: grid;
+  grid-template-columns: 70px 1fr 90px;
+  gap: 8px;
+  align-items: center;
+}
+.field-group { display: flex; flex-direction: column; gap: 3px; }
+.field-label { font-size: 8px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; }
+.mob-input, .mob-select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  padding: 7px 8px;
+  width: 100%;
+  outline: none;
+  transition: border-color .15s;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.mob-input:focus, .mob-select:focus { border-color: var(--green); }
+.mob-input[type="number"] { text-align: right; }
+.mob-select { cursor: pointer; }
+select option { background: #181b18; }
+.pct-slider-wrap { position: relative; }
+.pct-slider {
+  width: 100%;
+  margin-top: 5px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+}
+.pct-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--green);
+  cursor: pointer;
+  border: 2px solid var(--card);
+}
+.pct-slider::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--green);
+  cursor: pointer;
+  border: 2px solid var(--card);
+}
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-top: 10px;
+}
+.total-ok { color: var(--green); font-size: 14px; font-family: 'Fraunces', serif; }
+.total-warn { color: var(--red); font-size: 14px; font-family: 'Fraunces', serif; }
+.btn-add-mob {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 10px;
+  width: 100%;
+  cursor: pointer;
+  letter-spacing: 1px;
+  margin-top: 8px;
+  transition: border-color .15s, color .15s;
+}
+
+/* action buttons */
+.action-btns { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.btn-calc-mob {
+  background: var(--green);
+  border: none;
+  border-radius: var(--radius);
+  color: #0a1a0c;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 14px;
+  width: 100%;
+  cursor: pointer;
+  transition: background .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-calc-mob:active { background: #8de898; }
+.btn-pdf-mob {
+  background: transparent;
+  border: 1px solid var(--green-dim);
+  border-radius: var(--radius);
+  color: var(--green);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 13px;
+  width: 100%;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-pdf-mob:active { background: var(--green-dim); color: #fff; }
+
+/* history */
+.history-section { padding: 14px 14px 8px; }
+.history-label {
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.btn-hist-clear {
+  background: none; border: none; color: var(--text-dim);
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: .5px; cursor: pointer; padding: 0;
+  display: none;
+}
+.history-empty { font-size: 10px; color: var(--text-dim); text-align: center; padding: 12px 0; letter-spacing: .5px; }
+.history-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; margin-bottom: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); cursor: pointer;
+  transition: border-color .15s;
+  -webkit-user-select: none; user-select: none;
+}
+.history-item:active { border-color: var(--green-dim); background: #161a16; }
+.history-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.history-info { flex: 1; min-width: 0; }
+.history-name { font-size: 10px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.history-meta { font-size: 9px; color: var(--text-dim); margin-top: 1px; }
+.history-del { font-size: 16px; color: var(--text-dim); padding: 4px 6px; background: none; border: none; cursor: pointer; flex-shrink: 0; }
+
+/* ── RESULTS TAB ─────────────────────────────────── */
+.empty-mob {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 30px;
+  color: var(--text-dim); gap: 10px; text-align: center;
+}
+.empty-mob .icon { font-size: 36px; opacity: .3; }
+.result-cards-mob { padding: 14px 14px 0; display: grid; grid-template-columns: 1fr; gap: 8px; }
+.result-card-mob {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 14px;
+}
+.rc-label { font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+.rc-coords { font-family: 'Fraunces', serif; font-size: 17px; color: #fff; }
+.rc-sub { font-size: 9px; color: var(--text-dim); margin-top: 3px; line-height: 1.4; }
+.qtag {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 4px; font-size: 9px; margin-top: 5px;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+
+/* interp card */
+.interp-wrap { padding: 14px; }
+.interp-card-mob {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px;
+}
+.interp-grid-mob { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
+.interp-item-mob {
+  padding: 10px 12px; background: var(--surface);
+  border-radius: 6px; border-left: 3px solid;
+  position: relative;
+}
+.ilabel { font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
+.ivalue { font-size: 12px; font-weight: 500; margin: 4px 0 5px; }
+.itext { font-size: 10px; color: var(--text); line-height: 1.6; }
+.idesc { font-size: 9px; color: var(--text-dim); margin-top: 5px; }
+.warn-note-mob {
+  margin-top: 10px; padding: 9px 12px;
+  background: rgba(255,255,255,.03); border-radius: 5px;
+  border-left: 3px solid var(--border);
+  font-size: 9.5px; color: var(--text-dim); line-height: 1.65;
+}
+
+/* ── CHARTS TAB ──────────────────────────────────── */
+.chart-wrap-mob {
+  padding: 14px 14px 0;
+}
+.chart-card-mob {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px;
+  margin-bottom: 14px;
+}
+.chart-card-mob h3 {
+  font-family: 'Fraunces', serif; font-weight: 300;
+  font-size: 13px; color: var(--text); margin-bottom: 3px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.chart-sub-mob {
+  font-size: 9px; color: var(--text-dim); margin-bottom: 10px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.chart-canvas-wrap {
+  position: relative; height: 300px; margin-bottom: 10px;
+  touch-action: none;
+}
+.chart-canvas-wrap canvas { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; }
+.chart-legend-mob {
+  display: flex; flex-wrap: wrap; gap: 5px 10px;
+  border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px;
+}
+.legend-item-mob { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text-dim); }
+.legend-dot-mob { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.legend-line-mob { width: 12px; height: 2px; flex-shrink: 0; }
+.drag-hint {
+  font-size: 9px; color: var(--text-dim); text-align: center;
+  padding: 5px; letter-spacing: .5px;
+  border: 1px dashed var(--border); border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+/* ── INDICES TAB ─────────────────────────────────── */
+.indices-wrap { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.index-row-mob {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 12px; background: var(--surface);
+  border-radius: 6px; border-left: 3px solid;
+}
+.idx-name-mob { font-size: 8px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
+.idx-val-mob { font-size: 16px; font-family: 'Fraunces', serif; color: #fff; }
+.idx-desc-mob { font-size: 9px; color: var(--text-dim); margin-top: 2px; line-height: 1.45; }
+
+/* sens table */
+.sens-section { padding: 0 14px 14px; }
+.sens-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.sens-table-mob { width: 100%; border-collapse: collapse; min-width: 480px; }
+.sens-table-mob th {
+  background: var(--surface); color: var(--text-dim);
+  font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.sens-table-mob td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 11px; }
+.sens-table-mob tr:last-child td { border-bottom: none; }
+.bar-bg-mob { background: var(--surface); border-radius: 3px; height: 5px; overflow: hidden; display: inline-block; vertical-align: middle; width: 60px; }
+.bar-fill-mob { height: 100%; border-radius: 3px; }
+
+/* ── COLLAPSIBLE ─────────────────────────────────── */
+.collapsible-mob-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  -webkit-user-select: none; user-select: none;
+}
+.collapsible-mob-hdr .label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text); }
+.collapsible-mob-chev { font-size: 11px; color: var(--text-dim); transition: transform .2s; }
+.collapsible-mob-chev.open { transform: rotate(180deg); color: var(--green); }
+.collapsible-mob-body {
+  overflow: hidden; transition: max-height .28s ease, opacity .2s;
+  max-height: 0; opacity: 0;
+}
+.collapsible-mob-body.open { max-height: 3000px; opacity: 1; }
+
+/* ── COMPO BY QUADRANT ───────────────────────────── */
+.compo-bars { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.compo-bar-row { display: flex; align-items: center; gap: 8px; font-size: 10px; }
+
+/* ── POPUP ───────────────────────────────────────── */
+.q-popup-overlay {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.65); backdrop-filter: blur(3px);
+  align-items: flex-end; justify-content: center;
+}
+.q-popup-overlay.open { display: flex; }
+.q-popup-mob {
+  background: #151915; border: 1px solid var(--border);
+  border-radius: 14px 14px 0 0; padding: 24px 22px 32px;
+  width: 100%; max-height: 82vh; overflow-y: auto;
+  position: relative; animation: slideUp .22s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.q-popup-mob .pop-handle {
+  width: 36px; height: 4px; background: var(--border);
+  border-radius: 2px; margin: 0 auto 18px;
+}
+.q-popup-tag {
+  display: inline-block; font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase; padding: 3px 9px; border-radius: 20px;
+  font-family: 'DM Mono', monospace; margin-bottom: 10px; font-weight: 500;
+}
+.q-popup-mob h2 {
+  font-family: 'Fraunces', serif; font-weight: 300; font-size: 18px;
+  color: #fff; margin-bottom: 12px; line-height: 1.3;
+}
+.q-popup-mob p {
+  font-size: 11px; line-height: 1.75; color: var(--text);
+  font-family: 'DM Mono', monospace; margin-bottom: 10px;
+}
+.q-popup-mob .pop-divider { height: 1px; background: var(--border); margin: 12px 0; }
+.q-popup-mob .pop-examples { font-size: 10px; color: var(--text-dim); line-height: 1.6; margin-bottom: 6px; }
+.q-popup-mob .pop-note {
+  margin-top: 12px; padding: 9px 12px;
+  background: rgba(255,255,255,.03); border-radius: 6px;
+  border-left: 3px solid var(--border);
+  font-size: 10px; color: var(--text-dim); line-height: 1.65;
+}
+.q-popup-close-mob {
+  position: absolute; top: 18px; right: 18px;
+  background: none; border: none; color: var(--text-dim);
+  font-size: 20px; cursor: pointer; line-height: 1;
+}
+.pop-var {
+  margin-bottom: 10px; padding: 8px 10px;
+  background: rgba(255,255,255,.03); border-radius: 5px;
+  border-left: 2px solid;
+}
+.pop-var-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.pop-var-text { font-size: 10.5px; color: var(--text); line-height: 1.65; }
+
+/* ── SOBRE POPUP ─────────────────────────────────── */
+#sobrePopupOverlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.72); z-index: 9999;
+  align-items: flex-end; justify-content: center;
+  padding: 0;
+}
+.sobre-sheet {
+  background: #111811; border: 1px solid #253025;
+  border-radius: 14px 14px 0 0; padding: 24px 22px 32px;
+  width: 100%; max-height: 88vh; overflow-y: auto;
+  position: relative; animation: slideUp .22s ease;
+}
+.sobre-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 18px; }
+.sobre-author { display: flex; gap: 14px; align-items: center; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #253025; }
+.sobre-author img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid #2a4a2a; flex-shrink: 0; }
+.sobre-author-name { font-family: 'Fraunces', serif; font-size: 15px; color: var(--text); margin-bottom: 2px; }
+.sobre-author-role { font-size: 9px; color: var(--green); letter-spacing: .5px; margin-bottom: 3px; }
+.sobre-author-info { font-size: 9px; color: #7a8a7a; line-height: 1.5; }
+.sobre-body { font-size: 10.5px; color: #9aaa9a; line-height: 1.75; display: flex; flex-direction: column; gap: 12px; }
+.sobre-footer { margin-top: 18px; padding-top: 12px; border-top: 1px solid #253025; display: flex; flex-wrap: wrap; gap: 12px; font-size: 9px; color: #4a5a4a; }
+
+/* ── INLINE NAME EDITOR ──────────────────────────── */
+.name-edit-overlay {
+  display: none; position: fixed; inset: 0; z-index: 8000;
+  background: rgba(0,0,0,.5); align-items: flex-end;
+}
+.name-edit-overlay.open { display: flex; }
+.name-edit-sheet {
+  background: var(--card); border-top: 1px solid var(--border);
+  padding: 20px 18px 32px; width: 100%; animation: slideUp .18s ease;
+}
+.name-edit-sheet label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 8px; }
+.name-edit-sheet input {
+  width: 100%; background: var(--surface); border: 1px solid var(--green);
+  border-radius: 6px; color: var(--text); font-family: 'DM Mono', monospace;
+  font-size: 15px; padding: 12px 14px; outline: none;
+}
+.name-edit-btns { display: flex; gap: 8px; margin-top: 12px; }
+.name-edit-btns button {
+  flex: 1; padding: 12px; border-radius: 6px; font-family: 'DM Mono', monospace;
+  font-size: 12px; cursor: pointer; border: none; letter-spacing: 1px;
+}
+.btn-confirm-name { background: var(--green); color: #0a1a0c; font-weight: 500; }
+.btn-cancel-name { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border) !important; }
+
+/* ── PDF PRINT STYLES ────────────────────────────── */
+.pdf-header { display: none; background: #fff; color: #111; padding: 16px 24px 12px; border-bottom: 2px solid #1a5c2e; }
+.pdf-header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.pdf-header-name { font-size: 15px; font-weight: 700; color: #1a3d2b; }
+.pdf-header-site { font-size: 11px; color: #1a5c2e; font-weight: 600; margin-top: 2px; }
+.pdf-header-details { font-size: 10px; color: #444; margin-top: 8px; display: flex; gap: 20px; flex-wrap: wrap; }
+.pdf-header-right { text-align: right; font-size: 10px; color: #555; }
+#pdfCabecalho { display: none; }
+.pdf-only { display: none; }
+.pdf-parecer { display: none; }
+.pdf-interp { display: none; }
+.pdf-influence { display: none; }
+#pdfAviso { display: none; }
+
+@media print {
+  @page { size: A4 portrait; margin: 12mm 14mm 14mm 14mm; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: #fff !important; color: #111 !important; font-family: 'DM Mono', monospace; font-size: 9pt; overflow: visible !important; height: auto !important; display: block !important; }
+  .mob-header, .tab-bar, .tab-panel, .mob-content { display: none !important; }
+  .pdf-print-root { display: block !important; }
+  .pdf-header { display: block !important; }
+  #pdfCabecalho {
+    display: block !important;
+    background: #1a3d2b !important;
+    color: #fff !important;
+    padding: 10px 14px 8px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+  }
+  #pdfCabecalho .cab-title { font-size: 15pt; font-weight: 300; font-family: 'Fraunces', serif; color: #fff; letter-spacing: -.3px; }
+  #pdfCabecalho .cab-sub { font-size: 8pt; color: #9fcfac; margin-top: 2px; font-family: 'DM Mono', monospace; letter-spacing: 1.5px; text-transform: uppercase; }
+  #pdfCabecalho .cab-info { font-size: 7.5pt; color: #cde8d4; margin-top: 6px; display: flex; justify-content: space-between; align-items: flex-end; }
+  #pdfCabecalho .cab-right { text-align: right; }
+  .interp-card { background: #f5f5f5 !important; border: 1px solid #ccc !important; border-radius: 4px; padding: 10px 12px; margin-bottom: 8px; }
+  .interp-card h3 { font-size: 9pt; color: #1a3d2b !important; margin-bottom: 6px; }
+  .interp-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px; }
+  .interp-item { background: #fff !important; border: 1px solid #ddd !important; border-radius: 3px; padding: 7px 9px; }
+  .ilabel { font-size: 7pt; color: #666 !important; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+  .ivalue { font-size: 9.5pt !important; color: #111 !important; font-weight: 600; }
+  .results-grid { display: grid !important; grid-template-columns: repeat(3,1fr) !important; gap: 6px; margin-bottom: 8px; }
+  .result-card { background: #f9f9f9 !important; border: 1px solid #ddd !important; border-radius: 3px; padding: 6px 8px; }
+  .result-card .rc-label { font-size: 7pt; color: #888 !important; }
+  .result-card .rc-value { font-size: 10pt; font-weight: 700; color: #1a3d2b !important; }
+  .charts-row { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px; margin-bottom: 8px; break-inside: avoid; }
+  .chart-card { background: #f9f9f9 !important; border: 1px solid #ddd !important; border-radius: 3px; padding: 8px; break-inside: avoid; }
+  .chart-card h3 { font-size: 8.5pt; color: #1a3d2b !important; margin-bottom: 4px; }
+  .chart-wrap { height: 180px !important; }
+  .chart-wrap canvas { max-width: 100% !important; max-height: 100% !important; }
+  .section-label { font-size: 8pt; font-weight: 700; color: #1a3d2b !important; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1.5px solid #1a3d2b; padding-bottom: 3px; margin: 10px 0 6px 0; }
+  .sens-table table, .calc-table table { width: 100% !important; border-collapse: collapse !important; font-size: 8.5pt !important; }
+  .sens-table th, .calc-table th { background: #1a3d2b !important; color: #9fcfac !important; font-size: 7.5pt; padding: 4px 5px; text-align: left; }
+  .sens-table td, .calc-table td { padding: 3.5px 5px; border-bottom: .5px solid #e0e0e0; color: #111 !important; background: #fff !important; }
+  .sens-table tr:nth-child(even) td, .calc-table tr:nth-child(even) td { background: #f7f7f7 !important; }
+  .qtag { border-radius: 2px; padding: 1px 4px; font-size: 7pt; font-weight: 700; }
+  .bar-bg { background: #e8e8e8 !important; height: 5px !important; border-radius: 2px; display: inline-block; vertical-align: middle; }
+  .bar-fill { height: 100% !important; border-radius: 2px; }
+  .pdf-only { display: block !important; margin-bottom: 8px; }
+  .calc-table { background: #fff !important; border: 1px solid #ccc !important; border-radius: 3px; overflow: hidden; }
+  .calc-table table { width: 100% !important; border-collapse: collapse !important; font-size: 8.5pt !important; }
+  .calc-table th { background: #1a3d2b !important; color: #9fcfac !important; font-size: 7.5pt; padding: 4px 6px; text-align: left; }
+  .calc-table td { padding: 3.5px 6px; border-bottom: .5px solid #e0e0e0; color: #111 !important; background: #fff !important; }
+  .calc-table tr:nth-child(even) td { background: #f7f7f7 !important; }
+  #pdfAviso { display: block !important; margin-top: 14px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 7pt; color: #888 !important; line-height: 1.5; }
+  .chart-legend { display: flex !important; flex-wrap: wrap !important; gap: 4px 10px !important; margin-top: 6px !important; padding-top: 6px !important; border-top: 1px solid #ccc !important; }
+  .chart-legend-item { font-size: 7pt !important; color: #111 !important; display: flex !important; align-items: center !important; gap: 4px !important; }
+  .legend-dot { width: 8px !important; height: 8px !important; border-radius: 50% !important; flex-shrink: 0; }
+  .legend-line { width: 16px !important; height: 2px !important; flex-shrink: 0; }
+  #calcSection { display: none !important; }
+  #sensTableWrap { display: block !important; max-height: none !important; opacity: 1 !important; padding: 8px !important; }
+  #sensTableWrap .sens-table { display: block !important; }
+  .q-popup-overlay, .name-edit-overlay { display: none !important; }
+  #sobrePopupOverlay { display: none !important; }
+}
+
+/* ── PDF PRINT CONTAINER ─────────────────────────── */
+.pdf-print-root {
+  display: none;
+  background: #fff;
+  color: #111;
+}
+.pdf-print-root .pdf-inner {
+  padding: 0;
+}
+
+/* hidden print charts */
+.pdf-charts-row { display: none; }
+@media print {
+  .pdf-charts-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 8px;
+    break-inside: avoid;
+  }
+  .pdf-chart-card {
+    background: #f9f9f9 !important;
+    border: 1px solid #ddd !important;
+    border-radius: 3px;
+    padding: 8px;
+    break-inside: avoid;
+  }
+  .pdf-chart-card h3 { font-size: 8.5pt; color: #1a3d2b !important; margin-bottom: 4px; }
+  .pdf-chart-h { height: 180px !important; position: relative; }
+  .pdf-chart-h canvas { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; }
+}
+
+/* ── TOAST ───────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: calc(var(--tab-h) + var(--safe-bottom) + 12px);
+  left: 50%; transform: translateX(-50%);
+  background: #1a2a1a; border: 1px solid var(--green-dim);
+  color: var(--green); font-family: 'DM Mono', monospace;
+  font-size: 11px; padding: 9px 16px; border-radius: 20px;
+  z-index: 9000; opacity: 0; transition: opacity .2s;
+  white-space: nowrap; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ───────────────────────────────────────────────── -->
+<div class="mob-header">
+  <div>
+    <h1>Modelo Estrutural</h1>
+    <div class="sub">Substratos · Bonsai</div>
+  </div>
+  <button class="btn-sobre-mob" onclick="openSobrePopup()">sobre o modelo</button>
+</div>
+
+<!-- ── MAIN CONTENT ─────────────────────────────────────────── -->
+<div class="mob-content">
+
+  <!-- TAB 1: COMPONENTES -->
+  <div class="tab-panel active" id="tab-comp">
+    <div class="section-block">
+      <div class="section-label">
+        <span>Classes Estruturais <span style="font-size:8px;color:var(--text-dim);letter-spacing:0;text-transform:none">— toque para detalhes</span></span>
+      </div>
+      <div class="quadrant-grid">
+        <button class="q-cell" onclick="openPopup('Q2')" style="border:1px solid #1e3040">
+          <strong style="color:#6ab4e8;font-size:10px">Q2 — Abs. Mineral</strong>
+          <span class="q-info-btn">?</span>
+        </button>
+        <button class="q-cell" onclick="openPopup('Q1')" style="border:1px solid #1e4030">
+          <strong style="color:#6fcf7a;font-size:10px">Q1 — Dren. Mineral</strong>
+          <span class="q-info-btn">?</span>
+        </button>
+        <button class="q-cell" onclick="openPopup('Q3')" style="border:1px solid #401e1e">
+          <strong style="color:#e87a6a;font-size:10px">Q3 — Abs. Orgânico</strong>
+          <span class="q-info-btn">?</span>
+        </button>
+        <button class="q-cell" onclick="openPopup('Q4')" style="border:1px solid #40301e">
+          <strong style="color:#e8c96a;font-size:10px">Q4 — Dren. Orgânico</strong>
+          <span class="q-info-btn">?</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-label">
+        <span>Componentes</span>
+        <span class="q-info-btn" onclick="openInterpPopup('componentes')" style="position:static">?</span>
+      </div>
+      <div class="ing-list" id="ingListMob"></div>
+      <button class="btn-add-mob" id="btnAddMob">+ adicionar componente</button>
+      <div class="total-row">
+        <span style="color:var(--text-dim);font-size:10px">Total</span>
+        <span id="totalDisplayMob" class="total-warn">0%</span>
+      </div>
+    </div>
+
+    <!-- composição por quadrante (aparece após calcular) -->
+    <div id="compoBarSection" style="display:none">
+      <div class="collapsible-mob-hdr" onclick="toggleMobSection('compoBarBody','compoBarChev')">
+        <span class="label">Composição por Quadrante</span>
+        <span class="collapsible-mob-chev" id="compoBarChev">▾</span>
+      </div>
+      <div class="collapsible-mob-body open" id="compoBarBody">
+        <div class="compo-bars" id="compoBarsMob"></div>
+      </div>
+    </div>
+
+    <div class="action-btns">
+      <button class="btn-calc-mob" id="btnCalcMob">▶ calcular modelo</button>
+      <button class="btn-pdf-mob" id="btnPdfMob">⎙ salvar como PDF</button>
+    </div>
+
+    <div class="history-section">
+      <div class="history-label">
+        <span>Histórico — últimos 5 cálculos</span>
+        <button class="btn-hist-clear" id="btnHistClearMob" onclick="historyClear()">limpar tudo</button>
+      </div>
+      <div id="historyListMob"><div class="history-empty">nenhum cálculo ainda</div></div>
+    </div>
+  </div>
+
+  <!-- TAB 2: RESULTADOS -->
+  <div class="tab-panel" id="tab-results">
+    <div id="emptyMob" class="empty-mob">
+      <div class="icon">⬡</div>
+      <div style="font-size:14px">Insira componentes e calcule</div>
+      <div style="font-size:10px;color:var(--text-dim)">Os resultados aparecerão aqui</div>
+    </div>
+    <div id="resultsContentMob" style="display:none">
+      <div class="result-cards-mob" id="summaryCardsMob"></div>
+      <div class="interp-wrap">
+        <div class="collapsible-mob-hdr" onclick="toggleMobSection('interpBodyMob','interpChevMob')">
+          <span class="label">Interpretação Estrutural</span>
+          <span class="collapsible-mob-chev open" id="interpChevMob">▾</span>
+        </div>
+        <div class="collapsible-mob-body open" id="interpBodyMob">
+          <div id="interpCardMob" style="padding:12px 0"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: DIAGRAMAS -->
+  <div class="tab-panel" id="tab-charts">
+    <div id="emptyChartsMob" class="empty-mob">
+      <div class="icon">◈</div>
+      <div style="font-size:14px">Calcule o modelo primeiro</div>
+    </div>
+    <div id="chartsContentMob" style="display:none" class="chart-wrap-mob">
+      <div class="chart-card-mob">
+        <h3>
+          Diagrama Estrutural
+          <span class="q-info-btn" onclick="openInterpPopup('diagrama')" style="position:static">?</span>
+        </h3>
+        <div class="chart-sub-mob">Vetores · B → Bg → B★ · <span style="color:var(--green-dim)">arraste para ajustar</span></div>
+        <div class="drag-hint">👆 Arraste os pontos dos vetores para ajuste interativo</div>
+        <div class="chart-canvas-wrap" id="chart1WrapMob">
+          <canvas id="chart1Mob"></canvas>
+        </div>
+        <div class="chart-legend-mob" id="legend1Mob"></div>
+      </div>
+
+      <div class="chart-card-mob">
+        <h3>Campo de Sensibilidade (+10%)</h3>
+        <div class="chart-sub-mob">Deslocamento de B★ · <span style="color:var(--green-dim)">toque na seta para +10%</span></div>
+        <div class="chart-canvas-wrap">
+          <canvas id="chart2Mob"></canvas>
+        </div>
+        <div class="chart-legend-mob" id="legend2Mob"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: ÍNDICES -->
+  <div class="tab-panel" id="tab-indices">
+    <div id="emptyIdxMob" class="empty-mob">
+      <div class="icon">∑</div>
+      <div style="font-size:14px">Calcule o modelo primeiro</div>
+    </div>
+    <div id="indicesContentMob" style="display:none">
+      <div class="collapsible-mob-hdr" onclick="toggleMobSection('idxBodyMob','idxChevMob')">
+        <span class="label">Índices Calculados</span>
+        <span class="collapsible-mob-chev" id="idxChevMob">▾</span>
+      </div>
+      <div class="collapsible-mob-body" id="idxBodyMob">
+        <div class="indices-wrap" id="calcTableMob"></div>
+      </div>
+
+      <div class="collapsible-mob-hdr" onclick="toggleMobSection('sensBodyMob','sensChevMob')">
+        <span class="label" style="display:flex;align-items:center;gap:8px">
+          Análise de Sensibilidade
+          <span class="q-info-btn" onclick="event.stopPropagation();openInterpPopup('sensibilidade')" style="position:static">?</span>
+        </span>
+        <span class="collapsible-mob-chev" id="sensChevMob">▾</span>
+      </div>
+      <div class="collapsible-mob-body" id="sensBodyMob">
+        <div class="sens-section">
+          <div class="sens-scroll">
+            <table class="sens-table-mob" id="sensTableMob"></table>
+          </div>
+          <div style="margin-top:6px;padding:6px 10px;font-size:9px;color:var(--text-dim);line-height:1.55;background:var(--surface);border-radius:4px">
+            <strong style="color:var(--text-dim);letter-spacing:.5px">Influência</strong> = magnitude do deslocamento de B★ ao adicionar +10% do componente.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /mob-content -->
+
+<!-- ── TAB BAR ──────────────────────────────────────────────── -->
+<div class="tab-bar">
+  <button class="tab-btn active" id="tabBtnComp" onclick="switchTab('comp')">
+    <span class="tab-icon">⊞</span>
+    <span>Fórmula</span>
+  </button>
+  <button class="tab-btn" id="tabBtnResults" onclick="switchTab('results')">
+    <span class="tab-icon">◈</span>
+    <span>Resultados</span>
+  </button>
+  <button class="tab-btn" id="tabBtnCharts" onclick="switchTab('charts')">
+    <span class="tab-icon">⊹</span>
+    <span>Diagramas</span>
+  </button>
+  <button class="tab-btn" id="tabBtnIndices" onclick="switchTab('indices')">
+    <span class="tab-icon">∑</span>
+    <span>Índices</span>
+  </button>
+</div>
+
+<!-- ── PDF PRINT ROOT (hidden, rendered for print) ──────────── -->
+<div class="pdf-print-root" id="pdfPrintRoot">
+  <div class="pdf-header" id="pdfHeader">
+    <div class="pdf-header-top">
+      <div>
+        <div class="pdf-header-name">João Giovanni</div>
+        <div class="pdf-header-site">Engenheiro Agrônomo · Entusiasta da arte do bonsai</div>
+        <div style="font-size:10px;color:#444;margin-top:3px">Especialista em plantas ornamentais e estresse vegetal</div>
+        <div style="font-size:9.5px;color:#666;margin-top:1px">Escola Superior de Agricultura Luiz de Queiroz (ESALQ) — Universidade de São Paulo (USP) — Brasil</div>
+        <div class="pdf-header-details">
+          <span>CREA-SP: 507-1573593</span>
+          <span>Instagram: @joao.giovanni90</span>
+          <span>Whatsapp: (19) 99758-3777</span>
+          <span>www.cultivoornamental.com.br</span>
+        </div>
+      </div>
+      <div class="pdf-header-right">
+        <div style="font-size:13px;font-weight:700;color:#1a3d2b">Modelo Estrutural de Substratos</div>
+        <div id="pdfDate" style="margin-top:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pdfCabecalho">
+    <div class="cab-title">Modelo Estrutural de Substratos</div>
+    <div class="cab-sub">Componentes · Granulometria · Degradabilidade</div>
+    <div class="cab-info">
+      <div>
+        <strong>João Giovanni</strong><br>
+        Engenheiro Agrônomo · Entusiasta da arte do bonsai<br>
+        Especialista em plantas ornamentais e estresse vegetal<br>
+        ESALQ — Universidade de São Paulo (USP) — Brasil<br>
+        CREA-SP: 507-1573593
+      </div>
+      <div class="cab-right">
+        www.cultivoornamental.com.br<br>
+        @joao.giovanni90 &nbsp;|&nbsp; (19) 99758-3777
+      </div>
+    </div>
+  </div>
+
+  <!-- same structure as desktop for PDF output -->
+  <div id="pdfInterpBlock" class="pdf-interp"></div>
+  <div id="pdfCompoBlock" class="pdf-only">
+    <div class="section-label">Composição Detalhada</div>
+    <div class="calc-table" id="calcTableCompo"></div>
+  </div>
+  <div class="pdf-charts-row">
+    <div class="pdf-chart-card">
+      <h3>Diagrama Estrutural</h3>
+      <div class="pdf-chart-h"><canvas id="chart1Pdf"></canvas></div>
+      <div class="chart-legend" id="legend1Pdf"></div>
+    </div>
+    <div class="pdf-chart-card">
+      <h3>Campo de Sensibilidade (+10%)</h3>
+      <div class="pdf-chart-h"><canvas id="chart2Pdf"></canvas></div>
+      <div class="chart-legend" id="legend2Pdf"></div>
+    </div>
+  </div>
+  <div id="sensTablePdfWrap">
+    <div class="section-label">Análise de Sensibilidade</div>
+    <div class="sens-table" id="sensTablePdf"></div>
+  </div>
+  <div id="pdfInfluenceBlock" class="pdf-influence"></div>
+  <div id="pdfAviso">
+Este modelo foi desenvolvido e disponibilizado gratuitamente pelo Eng. Agrônomo João Giovanni (CREA-SP: 507-1573593)
+como ferramenta de apoio técnico para formulação e análise de substratos.
+O autor não se responsabiliza pela reprodução, adaptação ou uso por terceiros sem autorização expressa.
+Os resultados são de natureza orientativa e não substituem o diagnóstico técnico presencial.
+Contato: www.cultivoornamental.com.br &nbsp;|&nbsp; @joao.giovanni90 &nbsp;|&nbsp; (19) 99758-3777
+  </div>
+</div>
+
+<!-- ── POPUP ─────────────────────────────────────────────────── -->
+<div class="q-popup-overlay" id="qPopupOverlay" onclick="closePopupOutside(event)">
+  <div class="q-popup-mob" id="qPopup">
+    <div class="pop-handle"></div>
+    <button class="q-popup-close-mob" onclick="closePopup()">×</button>
+    <div id="qPopupContent"></div>
+  </div>
+</div>
+
+<!-- ── SOBRE ─────────────────────────────────────────────────── -->
+<div id="sobrePopupOverlay" onclick="closeSobreOutside(event)">
+  <div class="sobre-sheet" onclick="event.stopPropagation()">
+    <div class="sobre-handle"></div>
+    <div class="sobre-author">
+      <img src="foto_joao.png" alt="João Giovanni">
+      <div>
+        <div class="sobre-author-name">João Giovanni</div>
+        <div class="sobre-author-role">Engenheiro Agrônomo · Entusiasta da arte do bonsai</div>
+        <div class="sobre-author-info">Especialista em plantas ornamentais e estresse vegetal<br>ESALQ — Universidade de São Paulo (USP)</div>
+      </div>
+    </div>
+    <div style="font-family:'Fraunces',serif;font-size:14px;font-weight:300;color:var(--text);margin-bottom:12px">Sobre o Modelo Estrutural de Substratos</div>
+    <div class="sobre-body">
+      <p style="margin:0">O Modelo Estrutural de Substratos foi desenvolvido pelo Eng. Agrônomo João Giovanni para facilitar a compreensão de relações físico-químicas em misturas de substratos — particularmente relevante no cultivo de bonsai, no qual o desempenho do substrato influencia diretamente a aeração radicular, a disponibilidade de água e a estabilidade estrutural.</p>
+      <p style="margin:0;padding:10px 12px;background:rgba(111,207,122,.07);border-left:2px solid #6fcf7a44;border-radius:4px;color:#8a9a8a">O modelo é disponibilizado como ferramenta gratuita com finalidade educativa.</p>
+    </div>
+    <div class="sobre-footer">
+      <span>🌿 www.cultivoornamental.com.br</span>
+      <span>📸 @joao.giovanni90</span>
+      <span>📱 (19) 99758-3777</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── NAME EDITOR ───────────────────────────────────────────── -->
+<div class="name-edit-overlay" id="nameEditOverlay" onclick="closeNameEdit()">
+  <div class="name-edit-sheet" onclick="event.stopPropagation()">
+    <label>Nome do Componente</label>
+    <input type="text" id="nameEditInput" placeholder="ex: akadama, pedrisco..." autocomplete="off">
+    <div class="name-edit-btns">
+      <button class="btn-cancel-name" onclick="closeNameEdit()">cancelar</button>
+      <button class="btn-confirm-name" onclick="confirmNameEdit()">confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ─────────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────
+let ingredients = [
+  {pct:25, name:'A', q:'Q1', gran:2},
+  {pct:25, name:'B', q:'Q2', gran:3},
+  {pct:25, name:'C', q:'Q3', gran:0.1},
+  {pct:25, name:'D', q:'Q4', gran:2},
+];
+const QCOLORS = {Q1:'#6fcf7a', Q2:'#6ab4e8', Q3:'#e87a6a', Q4:'#e8c96a'};
+const QBG     = {Q1:'#0f2018', Q2:'#0f1820', Q3:'#200f0f', Q4:'#201a0f'};
+const QBORD   = {Q1:'#1e4030', Q2:'#1e3040', Q3:'#401e1e', Q4:'#40301e'};
+let _nameEditIdx = -1;
+let _isDragging = false;
+let chart1inst = null, chart2inst = null;
+let chart1PdfInst = null, chart2PdfInst = null;
+
+// ─── TAB NAVIGATION ──────────────────────────────────────────────
+function switchTab(tab) {
+  ['comp','results','charts','indices'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+  });
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ─── RENDER INGREDIENTS ──────────────────────────────────────────
+function renderIngredients() {
+  const list = document.getElementById('ingListMob');
+  list.innerHTML = '';
+  ingredients.forEach((ing, i) => {
+    const card = document.createElement('div');
+    card.className = 'ing-card';
+    card.style.borderLeftColor = QCOLORS[ing.q];
+    card.style.borderLeftWidth = '3px';
+
+    card.innerHTML = `
+      <div class="ing-card-top">
+        <div class="ing-name-tap" id="nameTap${i}" data-idx="${i}">${ing.name || '—'}</div>
+        <button class="btn-remove-mob" onclick="removeIng(${i})">×</button>
+      </div>
+      <div class="ing-card-bottom">
+        <div class="field-group">
+          <div class="field-label">% volume</div>
+          <input type="number" class="mob-input" min="0" max="100" step="1"
+            value="${ing.pct}" id="pctInp${i}"
+            oninput="onPctInput(${i},this.value)"
+            onchange="onPctChange(${i},this.value)">
+        </div>
+        <div class="field-group">
+          <div class="field-label">% (slider)</div>
+          <input type="range" class="pct-slider" min="0" max="100" step="1"
+            value="${ing.pct}" id="pctSlider${i}"
+            oninput="onSliderInput(${i},this.value)">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Classe</div>
+          <select class="mob-select" onchange="onQChange(${i},this.value)" style="color:${QCOLORS[ing.q]}">
+            ${['Q1','Q2','Q3','Q4'].map(q => `<option value="${q}" ${ing.q===q?'selected':''}>${q}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="field-group" style="margin-top:8px">
+        <div class="field-label">Granulometria (mm)</div>
+        <input type="number" class="mob-input" min="0" step="0.1"
+          value="${ing.gran != null ? ing.gran : ''}" placeholder="mm (opcional)"
+          oninput="onGranInput(${i},this.value)" onchange="onGranInput(${i},this.value)">
+      </div>`;
+
+    list.appendChild(card);
+
+    // name tap handler
+    document.getElementById(`nameTap${i}`).addEventListener('click', () => openNameEdit(i));
+  });
+  updateTotal();
+}
+
+function onPctInput(i, val) {
+  const v = Math.max(0, parseFloat(val) || 0);
+  ingredients[i].pct = v;
+  const slider = document.getElementById(`pctSlider${i}`);
+  if (slider) slider.value = v;
+  updateTotal();
+  liveRecalcDebounced();
+}
+function onPctChange(i, val) {
+  const v = Math.max(0, parseFloat(val) || 0);
+  ingredients[i].pct = v;
+  const inp = document.getElementById(`pctInp${i}`);
+  if (inp) inp.value = v;
+  const slider = document.getElementById(`pctSlider${i}`);
+  if (slider) slider.value = v;
+  updateTotal();
+}
+function onSliderInput(i, val) {
+  const v = parseInt(val);
+  ingredients[i].pct = v;
+  const inp = document.getElementById(`pctInp${i}`);
+  if (inp) inp.value = v;
+  updateTotal();
+  liveRecalcDebounced();
+}
+function onQChange(i, val) {
+  ingredients[i].q = val;
+  const card = document.getElementById(`ingListMob`).children[i];
+  if (card) {
+    card.style.borderLeftColor = QCOLORS[val];
+    const sel = card.querySelector('select');
+    if (sel) sel.style.color = QCOLORS[val];
+  }
+}
+function onGranInput(i, val) {
+  const v = parseFloat(val);
+  ingredients[i].gran = (val && !isNaN(v) && v > 0) ? v : null;
+  liveRecalcDebounced();
+}
+function removeIng(i) { ingredients.splice(i, 1); renderIngredients(); }
+document.getElementById('btnAddMob').onclick = () => {
+  ingredients.push({pct:0, name:'', q:'Q1', gran:null});
+  renderIngredients();
+};
+
+function updateTotal() {
+  const t = ingredients.reduce((s,i) => s + i.pct, 0);
+  const el = document.getElementById('totalDisplayMob');
+  const diff = parseFloat((100 - t).toFixed(2));
+  el.textContent = t.toFixed(1) + '%';
+  el.className = Math.abs(diff) < 0.01 ? 'total-ok' : 'total-warn';
+}
+
+// ─── NAME EDITOR ─────────────────────────────────────────────────
+function openNameEdit(idx) {
+  _nameEditIdx = idx;
+  const overlay = document.getElementById('nameEditOverlay');
+  const input = document.getElementById('nameEditInput');
+  input.value = ingredients[idx].name || '';
+  overlay.classList.add('open');
+  setTimeout(() => input.focus(), 100);
+}
+function closeNameEdit() {
+  document.getElementById('nameEditOverlay').classList.remove('open');
+  _nameEditIdx = -1;
+}
+function confirmNameEdit() {
+  if (_nameEditIdx < 0) return;
+  const val = document.getElementById('nameEditInput').value.trim();
+  ingredients[_nameEditIdx].name = val;
+  closeNameEdit();
+  renderIngredients();
+}
+document.getElementById('nameEditInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmNameEdit();
+  if (e.key === 'Escape') closeNameEdit();
+});
+
+// ─── MODEL COMPUTATION (identical to desktop) ─────────────────────
+function vectorFor(q,p){return {Q1:[+p,+p],Q2:[-p,+p],Q3:[-p,-p],Q4:[+p,-p]}[q];}
+function unitPos(q){return {Q1:[+1,+1],Q2:[-1,+1],Q3:[-1,-1],Q4:[+1,-1]}[q];}
+function computeModel(ings){
+  let Rx=0,Ry=0;
+  const vecs=ings.map(ing=>{const v=vectorFor(ing.q,ing.pct);Rx+=v[0];Ry+=v[1];return v;});
+  const sumPct=ings.reduce((s,i)=>s+i.pct,0);
+  const Bx=sumPct>0?Rx/sumPct:0, By=sumPct>0?Ry/sumPct:0;
+  let sumBsx=0,sumBsy=0;
+  ings.forEach(ing=>{const p=unitPos(ing.q);sumBsx+=p[0];sumBsy+=p[1];});
+  const Bsx=ings.length>0?sumBsx/ings.length:0, Bsy=ings.length>0?sumBsy/ings.length:0;
+  const drain=ings.filter(i=>i.q==='Q1'||i.q==='Q4');
+  const absorb=ings.filter(i=>i.q==='Q2'||i.q==='Q3');
+  const sumPD=drain.reduce((s,i)=>s+i.pct,0);
+  const sumPA=absorb.reduce((s,i)=>s+i.pct,0);
+  let GD=null,GA=null,Ig=null,dXg=0,BgX=Bx,BgY=By,Icd=null,Icd4=null,G1=null,G2=null,G4=null,Gmed=null,RdEfQ4=0,contamQ4=0;
+  if(sumPD>0&&drain.every(i=>i.gran!=null)) GD=drain.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPD;
+  if(sumPA>0&&absorb.every(i=>i.gran!=null)) GA=absorb.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPA;
+  const allWithGran=ings.filter(i=>i.gran!=null);
+  const sumPAll=allWithGran.reduce((s,i)=>s+i.pct,0);
+  const q1WithGran=ings.filter(i=>i.q==='Q1'&&i.gran!=null);
+  const sumPQ1=q1WithGran.reduce((s,i)=>s+i.pct,0);
+  const q2WithGran=ings.filter(i=>i.q==='Q2'&&i.gran!=null);
+  const sumPQ2=q2WithGran.reduce((s,i)=>s+i.pct,0);
+  let limiar=null,ratio=null,kExp=null;
+  if(sumPAll>0){
+    Gmed=allWithGran.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPAll;
+    if(sumPQ2>0){
+      G2=q2WithGran.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPQ2;
+      limiar=(2/3)*G2;
+    }
+    if(sumPQ1>0){
+      G1=q1WithGran.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPQ1;
+      if(G2!=null){
+        const kGauss=12.0;
+        const valG2=0.02+0.98*(limiar/G2);
+        if(G1<=limiar){const t=(limiar-G1)/limiar;Icd=Math.exp(-kGauss*t*t);kExp=kGauss;ratio=1-t;}
+        else if(G1<=G2){const t=(G1-limiar)/(G2-limiar);Icd=1-(1-valG2)*t*t;kExp=2;ratio=t;}
+        else{Icd=0.02+0.98*(limiar/G1);kExp=1;ratio=limiar/G1;}
+      }
+    }
+  }
+  if(GD!=null&&GA!=null&&GD>0) Ig=GA/GD;
+  {
+    const q4WithGran=ings.filter(i=>i.q==='Q4'&&i.gran!=null);
+    const sumPQ4=q4WithGran.reduce((s,i)=>s+i.pct,0);
+    G4=sumPQ4>0?q4WithGran.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPQ4:null;
+    if(G4!=null&&G2!=null&&limiar!=null){
+      const kG=12.0,valG2_4=0.02+0.98*(limiar/G2);
+      if(G4<=limiar){const t=(limiar-G4)/limiar;Icd4=Math.exp(-kG*t*t);}
+      else if(G4<=G2){const t=(G4-limiar)/(G2-limiar);Icd4=1-(1-valG2_4)*t*t;}
+      else{Icd4=0.02+0.98*(limiar/G4);}
+    }
+  }
+  if(G2!=null&&limiar!=null){
+    const q1Pct=ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+    const sumPQ4b=ings.filter(i=>i.q==='Q4'&&i.gran!=null).reduce((s,i)=>s+i.pct,0);
+    const hasQ1=q1Pct>0;
+    const IcdVal=Icd!=null?Icd:0;
+    const Icd4Val=Icd4!=null?Icd4:null;
+    const pesoQ1=hasQ1?q1Pct:0;
+    const Od_pct=ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+    RdEfQ4=(Od_pct/100)*(Od_pct/100);
+    const pesoQ4=sumPQ4b*(1-RdEfQ4);
+    const signed1=2*IcdVal-1;
+    const signed4=Icd4Val!=null?2*Icd4Val-1:0;
+    const pesoQ4ef=Icd4Val!=null?pesoQ4:0;
+    const q4frac=(q1Pct+sumPQ4b)>0?sumPQ4b/(q1Pct+sumPQ4b):0;
+    contamQ4=Icd4Val!=null?q4frac*(1-Icd4Val):0;
+    const signed1_ef=signed1*(1-contamQ4);
+    const ampQ1=(IcdVal<0.3&&hasQ1)?2.0:1.0;
+    const dXgRaw=(pesoQ1*ampQ1*signed1_ef+pesoQ4ef*signed4)/100.0;
+    const BgXClamped=Math.max(-1,Math.min(1,Bx+dXgRaw));
+    dXg=BgXClamped-Bx;
+    BgX=BgXClamped;
+  }
+  const quadrantesPresentes=[...new Set(ings.map(i=>i.q))];
+  const hasDrain=ings.some(i=>i.q==='Q1'||i.q==='Q4');
+  const hasAbsorb=ings.some(i=>i.q==='Q2'||i.q==='Q3');
+  const isMono=quadrantesPresentes.length===1;
+  const isDrainOnly=hasDrain&&!hasAbsorb;
+  const isAbsorbOnly=hasAbsorb&&!hasDrain;
+  const intraQ={};
+  let intraIcd=null,intraGA=null,intraGD=null,intraGrupo=null;
+  if(isMono||isDrainOnly||isAbsorbOnly){
+    const grp=ings.filter(i=>i.gran!=null&&!isNaN(i.gran)&&i.gran>0&&i.pct>0).sort((a,b)=>a.gran-b.gran);
+    if(grp.length>=2){
+      function calcQuartis(grp){
+        function granNoPercentil(p){
+          let acc=0;
+          for(let idx=0;idx<grp.length;idx++){
+            const prev=acc;acc+=grp[idx].pct;
+            if(acc>=p){
+              if(idx===0||prev>=p) return Math.max(0.1,grp[idx].gran);
+              const frac=(p-prev)/(acc-prev);
+              return Math.max(0.1,grp[idx-1].gran)+frac*(Math.max(0.1,grp[idx].gran)-Math.max(0.1,grp[idx-1].gran));
+            }
+          }
+          return Math.max(0.1,grp[grp.length-1].gran);
+        }
+        const GA=granNoPercentil(25),GD=granNoPercentil(75);
+        if(!GA||!GD) return null;
+        const lim=(2/3)*GD,vG2=0.02+0.98*(lim/GD),G=GA;
+        let icd;
+        if(G<=lim){const t=(lim-G)/lim;icd=Math.exp(-4.6*t*t);}
+        else if(G<=GD){const t=(G-lim)/(GD-lim);icd=1-(1-vG2)*t*t;}
+        else{icd=0.02+0.98*(lim/G);}
+        return {Icd:icd,GA,GD};
+      }
+      const res=calcQuartis(grp);
+      if(res){
+        intraIcd=res.Icd;intraGA=res.GA;intraGD=res.GD;
+        intraGrupo=isMono?quadrantesPresentes[0]:(isDrainOnly?'Q1+Q4':'Q2+Q3');
+        intraQ[intraGrupo]={Icd:intraIcd,GA:intraGA,GD:intraGD,n:grp.length};
+        if(isMono){
+          const signed=2*intraIcd-1;
+          const totalPct=grp.reduce((s,i)=>s+i.pct,0);
+          dXg=(totalPct*signed)/100;
+          BgX=Math.max(-1,Math.min(1,Bx+dXg));
+        }
+      }
+    }
+  }
+  const Oa=ings.filter(i=>i.q==='Q3').reduce((s,i)=>s+i.pct,0);
+  const Od=ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const Id=ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const Ia=ings.filter(i=>i.q==='Q2').reduce((s,i)=>s+i.pct,0);
+  const S=Ia+Oa+Od;
+  const Stotal=ings.reduce((s,i)=>s+i.pct,0)||100;
+  const Rd=Stotal>0?(Oa>0?Oa/Stotal:Od/Stotal):0;
+  const RdEf=(Oa===0&&Od>0)?Rd*(Od/Stotal):Rd;
+  const dXdFator=(Oa===0&&Od>0)?0.3:1.0;
+  const dXd=-RdEf*dXdFator;
+  const dYd=-RdEf;
+  const BfXraw=BgX+dXd,BfYraw=BgY+dYd;
+  const BfX=Math.max(-1,Math.min(1,BfXraw)),BfY=Math.max(-1,Math.min(1,BfYraw));
+  return {vecs,Rx,Ry,Bx,By,Bsx,Bsy,sumPct,GD,GA,Ig,Icd,Icd4,G1,G2,G4,Gmed,limiar,ratio,kExp,dXg,BgX,BgY,Oa,Od,Id,Ia,S,Rd,RdEf,dXd,dYd,BfX,BfY,intraQ,RdEfQ4,contamQ4};
+}
+function quadrantOf(x,y){if(x>=0&&y>=0)return'Q1';if(x<0&&y>=0)return'Q2';if(x<0&&y<0)return'Q3';return'Q4';}
+function quadrantLabel(q){return {Q1:'Drenante Mineral',Q2:'Absorvente Mineral',Q3:'Absorvente Orgânico',Q4:'Drenante Orgânico'}[q];}
+
+// ─── CHART HELPERS ────────────────────────────────────────────────
+function chartBounds(pts){
+  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+  const absMax=Math.max(Math.abs(Math.min(...xs)),Math.abs(Math.max(...xs)),Math.abs(Math.min(...ys)),Math.abs(Math.max(...ys)),0.4);
+  const n=Math.ceil((absMax+0.2)*10)/10;
+  return {min:-n,max:n};
+}
+function makeQuadrantPlugin(id){
+  return {
+    id,
+    beforeDraw(chart){
+      const {ctx:c,chartArea:ca,scales:sc}=chart;
+      const x0=sc.x.getPixelForValue(0),y0=sc.y.getPixelForValue(0);
+      c.save();
+      [{x:x0,y:ca.top,w:ca.right-x0,h:y0-ca.top,col:'rgba(111,207,122,0.04)'},
+       {x:ca.left,y:ca.top,w:x0-ca.left,h:y0-ca.top,col:'rgba(106,180,232,0.04)'},
+       {x:ca.left,y:y0,w:x0-ca.left,h:ca.bottom-y0,col:'rgba(232,122,106,0.04)'},
+       {x:x0,y:y0,w:ca.right-x0,h:ca.bottom-y0,col:'rgba(232,201,106,0.04)'},
+      ].forEach(f=>{c.fillStyle=f.col;c.fillRect(f.x,f.y,f.w,f.h);});
+      c.strokeStyle='#253025';c.lineWidth=1;c.setLineDash([4,5]);
+      c.beginPath();c.moveTo(x0,ca.top);c.lineTo(x0,ca.bottom);c.stroke();
+      c.beginPath();c.moveTo(ca.left,y0);c.lineTo(ca.right,y0);c.stroke();
+      c.setLineDash([]);c.font='bold 9px DM Mono';
+      c.fillStyle='rgba(111,207,122,0.25)';c.fillText('Q1',x0+4,ca.top+12);
+      c.fillStyle='rgba(106,180,232,0.25)';c.fillText('Q2',ca.left+4,ca.top+12);
+      c.fillStyle='rgba(232,122,106,0.25)';c.fillText('Q3',ca.left+4,ca.bottom-4);
+      c.fillStyle='rgba(232,201,106,0.25)';c.fillText('Q4',x0+4,ca.bottom-4);
+      c.restore();
+    }
+  };
+}
+const diagramLabelsPlugin = {
+  id:'diagram_labels_mob',
+  afterDraw(chart){
+    const {ctx:c,scales:sc,data}=chart;
+    if(!chart._mobModel) return;
+    const m=chart._mobModel;
+    c.save();
+    data.datasets.forEach((ds)=>{
+      if(!ds.showLine||!ds.data||ds.data.length<2||ds._isPath) return;
+      const p0=ds.data[0],p1=ds.data[ds.data.length-1];
+      const x0=sc.x.getPixelForValue(p0.x),y0=sc.y.getPixelForValue(p0.y);
+      const x1=sc.x.getPixelForValue(p1.x),y1=sc.y.getPixelForValue(p1.y);
+      if(Math.sqrt((x1-x0)**2+(y1-y0)**2)<4) return;
+      const angle=Math.atan2(y1-y0,x1-x0),al=8;
+      const col=QCOLORS[ds._q]||'#fff';
+      c.fillStyle=col;
+      c.beginPath();c.moveTo(x1,y1);
+      c.lineTo(x1-al*Math.cos(angle-.4),y1-al*Math.sin(angle-.4));
+      c.lineTo(x1-al*Math.cos(angle+.4),y1-al*Math.sin(angle+.4));
+      c.closePath();c.fill();
+    });
+    [{lbl:'B',x:m.Bx,y:m.By,col:'#aaaaaa'},{lbl:'Bs',x:m.Bsx,y:m.Bsy,col:'#cc88ff'},{lbl:'Bg',x:m.BgX,y:m.BgY,col:'#6ab4e8'},{lbl:'B*',x:m.BfX,y:m.BfY,col:'#e8c96a'}].forEach(lp=>{
+      const px=sc.x.getPixelForValue(lp.x),py=sc.y.getPixelForValue(lp.y);
+      c.font='bold 10px DM Mono';c.fillStyle=lp.col;
+      c.fillText(lp.lbl,px+12,py-3);
+      c.font='8px DM Mono';c.fillStyle=lp.col+'99';
+      c.fillText(`(${lp.x.toFixed(2)},${lp.y.toFixed(2)})`,px+12,py+8);
+    });
+    c.restore();
+  }
+};
+
+// ─── DRAW DIAGRAM ─────────────────────────────────────────────────
+function drawDiagram(m, ings, canvasId, legendId) {
+  const existingInst = canvasId === 'chart1Mob' ? chart1inst : chart1PdfInst;
+  if (existingInst) existingInst.destroy();
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const allPts = [{x:0,y:0}, ...ings.map((_,i)=>({x:m.vecs[i][0]/100,y:m.vecs[i][1]/100})),
+    {x:m.Bx,y:m.By},{x:m.Bsx,y:m.Bsy},{x:m.BgX,y:m.BgY},{x:m.BfX,y:m.BfY}];
+  const b = chartBounds(allPts);
+  const ingDS = ings.map((ing,i) => ({
+    label:`${ing.name} ${ing.pct}%`, _q:ing.q,
+    _endX:m.vecs[i][0]/100, _endY:m.vecs[i][1]/100,
+    data:[{x:0,y:0},{x:m.vecs[i][0]/100,y:m.vecs[i][1]/100}],
+    borderColor:QCOLORS[ing.q]+'bb', borderWidth:1.5,
+    pointRadius:[0,5], pointBackgroundColor:QCOLORS[ing.q], showLine:true, tension:0,
+  }));
+  const inst = new Chart(ctx, {
+    type:'scatter',
+    data:{datasets:[
+      ...ingDS,
+      {label:'path',_isPath:true,
+       data:[{x:m.Bx,y:m.By},{x:m.BgX,y:m.BgY},{x:m.BfX,y:m.BfY}],
+       borderColor:'#ffffff22',borderDash:[2,5],borderWidth:1,pointRadius:0,showLine:true,tension:.3},
+      {label:'B',_isB:true,data:[{x:m.Bx,y:m.By}],
+       pointRadius:8,pointStyle:'circle',pointBackgroundColor:'transparent',pointBorderColor:'#aaa',pointBorderWidth:2,showLine:false},
+      {label:'Bs',_isBs:true,data:[{x:m.Bsx,y:m.Bsy}],
+       pointRadius:6,pointStyle:'triangle',pointBackgroundColor:'transparent',pointBorderColor:'#cc88ff',pointBorderWidth:2,showLine:false},
+      {label:'Bg',_isBg:true,data:[{x:m.BgX,y:m.BgY}],
+       pointRadius:8,pointStyle:'rect',pointBackgroundColor:'transparent',pointBorderColor:'#6ab4e8',pointBorderWidth:2,showLine:false},
+      {label:'B*',_isBf:true,data:[{x:m.BfX,y:m.BfY}],
+       pointRadius:10,pointStyle:'star',pointBackgroundColor:'#e8c96a',pointBorderColor:'#e8c96a',showLine:false},
+    ]},
+    options:{
+      animation:{duration:300}, responsive:true, maintainAspectRatio:false,
+      scales:{
+        x:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:9},maxTicksLimit:7},
+           title:{display:true,text:'← Absorv. | Drenante →',color:'#4a5a4a',font:{family:'DM Mono',size:9}},border:{color:'#253025'}},
+        y:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:9},maxTicksLimit:7},
+           title:{display:true,text:'← Orgânico | Inorgânico →',color:'#4a5a4a',font:{family:'DM Mono',size:9}},border:{color:'#253025'}},
+      },
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#181b18',borderColor:'#252a25',borderWidth:1,
+          titleColor:'#cdd4cd',bodyColor:'#7a897a',
+          titleFont:{family:'DM Mono'},bodyFont:{family:'DM Mono'},
+          callbacks:{label:ctx=>{const p=ctx.parsed;return`${ctx.dataset.label}: (${p.x.toFixed(3)}, ${p.y.toFixed(3)})`;}}}}
+    },
+    plugins:[makeQuadrantPlugin('qMob'+canvasId), diagramLabelsPlugin]
+  });
+  inst._mobModel = m;
+  if (canvasId === 'chart1Mob') chart1inst = inst;
+  else chart1PdfInst = inst;
+
+  // legend
+  const leg = document.getElementById(legendId);
+  if (leg) {
+    leg.innerHTML = ings.map(ing => `<div class="legend-item-mob"><div class="legend-dot-mob" style="background:${QCOLORS[ing.q]}"></div><span>${ing.name} <span style="color:var(--text-dim)">${ing.pct}% ${ing.q}</span></span></div>`).join('')
+      + `<div class="legend-item-mob"><span style="display:inline-block;width:12px;height:2px;background:#aaa;opacity:.5;vertical-align:middle;margin-right:4px"></span><span>B — Tendência Estrutural</span></div>
+         <div class="legend-item-mob"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid #cc88ff;background:transparent;vertical-align:middle;margin-right:4px"></span><span>Bs — Tendência Material</span></div>
+         <div class="legend-item-mob"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;border:2px solid #6ab4e8;background:transparent;vertical-align:middle;margin-right:4px"></span><span>Bg — Tendência Granulométrica</span></div>
+         <div class="legend-item-mob"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#e8c96a;vertical-align:middle;margin-right:4px"></span><span>B★ — Tendência Final</span></div>`;
+  }
+  return inst;
+}
+
+// ─── TOUCH DRAG ON CHART1 ─────────────────────────────────────────
+function setupChart1Touch(m, ings) {
+  const canvas = document.getElementById('chart1Mob');
+  if (!canvas) return;
+
+  // Remove previous handlers
+  if (canvas._touchStart) canvas.removeEventListener('touchstart', canvas._touchStart);
+  if (canvas._mousedown) canvas.removeEventListener('mousedown', canvas._mousedown);
+
+  const onDragStart = (clientX, clientY) => {
+    if (!chart1inst) return false;
+    const rect = canvas.getBoundingClientRect();
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
+    const sc = chart1inst.scales;
+    let hitIdx = -1, hitDist = 99;
+    ings.forEach((ing, i) => {
+      if (!m.vecs || !m.vecs[i]) return;
+      const ex = m.vecs[i][0]/100, ey = m.vecs[i][1]/100;
+      const px = sc.x.getPixelForValue(ex), py = sc.y.getPixelForValue(ey);
+      const d = Math.sqrt((mx-px)**2 + (my-py)**2);
+      if (d < 22 && d < hitDist) { hitDist = d; hitIdx = i; }
+    });
+    return hitIdx;
+  };
+
+  const doDrag = (hitIdx, startX, startPct) => {
+    let lastPct = startPct;
+    _isDragging = true;
+
+    const onMove = (cx) => {
+      const dx = cx - startX;
+      let newPct = Math.round(Math.max(1, Math.min(99, startPct + dx * 0.25)));
+      if (newPct === lastPct) return;
+      lastPct = newPct;
+      const others = ings.filter((_,j) => j !== hitIdx);
+      const otherTotal = others.reduce((s,o) => s + o.pct, 0);
+      if (otherTotal <= 0) { ings[hitIdx].pct = 100; }
+      else {
+        ings[hitIdx].pct = newPct;
+        let remaining = 100 - newPct, runningSum = 0;
+        others.forEach((o, k) => {
+          if (k === others.length-1) { o.pct = Math.max(1, remaining - runningSum); }
+          else { const share = Math.round(o.pct / otherTotal * remaining); o.pct = Math.max(1, share); runningSum += o.pct; }
+        });
+      }
+      renderIngredients();
+      updateTotal();
+      liveRecalc('drag');
+    };
+
+    const onEnd = () => {
+      _isDragging = false;
+      if (ingredients.length === 1) ingredients[0].pct = 100;
+      const mFinal = computeModel(ingredients);
+      drawDiagram(mFinal, ingredients, 'chart1Mob', 'legend1Mob');
+      setupChart1Touch(mFinal, ingredients);
+      updateSensitivity(mFinal, ingredients);
+      document.removeEventListener('touchmove', touchMove);
+      document.removeEventListener('touchend', touchEnd);
+      document.removeEventListener('mousemove', mouseMove);
+      document.removeEventListener('mouseup', mouseUp);
+    };
+
+    const touchMove = e => { e.preventDefault(); onMove(e.touches[0].clientX); };
+    const touchEnd  = () => onEnd();
+    const mouseMove = e => onMove(e.clientX);
+    const mouseUp   = () => onEnd();
+
+    document.addEventListener('touchmove', touchMove, {passive: false});
+    document.addEventListener('touchend', touchEnd);
+    document.addEventListener('mousemove', mouseMove);
+    document.addEventListener('mouseup', mouseUp);
+  };
+
+  // Touch
+  canvas._touchStart = (e) => {
+    const idx = onDragStart(e.touches[0].clientX, e.touches[0].clientY);
+    if (idx < 0) return;
+    e.preventDefault();
+    doDrag(idx, e.touches[0].clientX, ings[idx].pct);
+  };
+  canvas.addEventListener('touchstart', canvas._touchStart, {passive: false});
+
+  // Mouse (for desktop preview)
+  canvas._mousedown = (e) => {
+    const idx = onDragStart(e.clientX, e.clientY);
+    if (idx < 0) return;
+    e.preventDefault();
+    doDrag(idx, e.clientX, ings[idx].pct);
+  };
+  canvas.addEventListener('mousedown', canvas._mousedown);
+}
+
+// ─── ARROWS / SENSITIVITY ─────────────────────────────────────────
+function computeArrows(m, ings) {
+  return ings.map((ing,idx) => {
+    const mod = ings.map((x,j) => {
+      if (j===idx) return {...x, pct:x.pct+10};
+      return {...x, pct:Math.max(0, x.pct - x.pct/(100-ing.pct)*10)};
+    });
+    const mn = computeModel(mod);
+    const dx = mn.BfX-m.BfX, dy = mn.BfY-m.BfY;
+    return {name:ing.name, pct:ing.pct, q:ing.q, idx, dx, dy, mag:Math.sqrt(dx**2+dy**2)};
+  });
+}
+
+function drawSensitivity(m, ings, canvasId, legendId) {
+  const existingInst = canvasId === 'chart2Mob' ? chart2inst : chart2PdfInst;
+  if (existingInst) existingInst.destroy();
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const arrows = computeArrows(m, ings);
+  const maxMag = Math.max(...arrows.map(a=>a.mag), 0.001);
+  const SCALE  = Math.min(0.55/maxMag, 15);
+  const allPts = [{x:m.BfX,y:m.BfY}, ...arrows.map(a=>({x:m.BfX+a.dx*SCALE,y:m.BfY+a.dy*SCALE}))];
+  const b = chartBounds(allPts);
+  const inst = new Chart(ctx, {
+    type:'scatter',
+    data:{datasets:[
+      {label:'B*',data:[{x:m.BfX,y:m.BfY}],pointRadius:10,pointStyle:'star',pointBackgroundColor:'#e8c96a',pointBorderColor:'#e8c96a',showLine:false},
+      ...arrows.map(a=>({
+        label:`+10% ${a.name}`, _arrow:a,
+        data:[{x:m.BfX,y:m.BfY},{x:m.BfX+a.dx*SCALE,y:m.BfY+a.dy*SCALE}],
+        borderColor:QCOLORS[a.q], borderWidth:2.5,
+        pointRadius:[0,5], pointBackgroundColor:QCOLORS[a.q], showLine:true,
+      }))
+    ]},
+    options:{
+      animation:{duration:400}, responsive:true, maintainAspectRatio:false,
+      onClick(evt, elements){
+        if (!elements.length) return;
+        const ds = inst.data.datasets[elements[0].datasetIndex];
+        if (!ds._arrow) return;
+        const idx = ds._arrow.idx;
+        if (idx == null) return;
+        const bump = 10, cur = ingredients[idx].pct;
+        const newPct = Math.min(99, cur+bump);
+        const diff = newPct - cur;
+        const others = ingredients.filter((_,j)=>j!==idx);
+        const otherTotal = others.reduce((s,o)=>s+o.pct,0);
+        if (otherTotal <= 0) return;
+        ingredients[idx].pct = newPct;
+        others.forEach(o=>{ o.pct = Math.max(1, Math.round(o.pct*(1-diff/otherTotal))); });
+        const total = ingredients.reduce((s,i)=>s+i.pct,0);
+        ingredients[idx].pct += 100-total;
+        renderIngredients(); updateTotal(); liveRecalc('click');
+        showToast(`+10% ${ds._arrow.name} aplicado`);
+      },
+      scales:{
+        x:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:9},maxTicksLimit:7},
+           title:{display:true,text:'← Absorv. | Drenante →',color:'#4a5a4a',font:{family:'DM Mono',size:9}},border:{color:'#253025'}},
+        y:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:9},maxTicksLimit:7},
+           title:{display:true,text:'← Orgânico | Inorgânico →',color:'#4a5a4a',font:{family:'DM Mono',size:9}},border:{color:'#253025'}},
+      },
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#181b18',borderColor:'#252a25',borderWidth:1,
+          titleColor:'#cdd4cd',bodyColor:'#7a897a',
+          titleFont:{family:'DM Mono'},bodyFont:{family:'DM Mono'},
+          callbacks:{label:ctx=>{const a=ctx.dataset._arrow;if(a)return[`toque para +10% · ${a.name} (${a.pct}%)`,`ΔX=${a.dx.toFixed(3)}  ΔY=${a.dy.toFixed(3)}`,`|Δ|=${a.mag.toFixed(3)}`];return ctx.dataset.label;}}}}
+    },
+    plugins:[makeQuadrantPlugin('qSens'+canvasId), {
+      id:'sens_labels_mob',
+      afterDraw(chart){
+        const {ctx:c,scales:sc,data}=chart;
+        c.save();
+        const bStar=data.datasets[0]&&data.datasets[0].data[0];
+        if(!bStar){c.restore();return;}
+        const x0=sc.x.getPixelForValue(bStar.x),y0=sc.y.getPixelForValue(bStar.y);
+        data.datasets.forEach(ds=>{
+          if(!ds.showLine||!ds._arrow) return;
+          const a=ds._arrow;
+          const tip=ds.data[ds.data.length-1];
+          const x1=sc.x.getPixelForValue(tip.x),y1=sc.y.getPixelForValue(tip.y);
+          const dist=Math.sqrt((x1-x0)**2+(y1-y0)**2);
+          if(dist<3) return;
+          const angle=Math.atan2(y1-y0,x1-x0),al=9;
+          c.fillStyle=QCOLORS[a.q];
+          c.beginPath();c.moveTo(x1,y1);
+          c.lineTo(x1-al*Math.cos(angle-.4),y1-al*Math.sin(angle-.4));
+          c.lineTo(x1-al*Math.cos(angle+.4),y1-al*Math.sin(angle+.4));
+          c.closePath();c.fill();
+          const ox=x1-x0>0?8:-8;
+          c.textAlign=ox>0?'left':'right';
+          c.font='9px DM Mono';c.fillStyle='#cdd4cd';
+          c.fillText(a.name,x1+ox,y1+(y1-y0>0?12:-4));
+          c.textAlign='left';
+        });
+        c.font='bold 10px DM Mono';c.fillStyle='#e8c96a';
+        c.fillText('B*',x0+14,y0-8);
+        c.restore();
+      }
+    }]
+  });
+  if (canvasId === 'chart2Mob') chart2inst = inst;
+  else chart2PdfInst = inst;
+
+  const leg = document.getElementById(legendId);
+  if (leg) {
+    const arrows2 = computeArrows(m, ings);
+    leg.innerHTML = arrows2.map(a => {
+      const d = a.dx>0.005?('→dren'):a.dx<-0.005?('←abs'):'—';
+      const o = a.dy>0.005?('↑inorg'):a.dy<-0.005?('↓org'):'—';
+      return `<div class="legend-item-mob"><div class="legend-line-mob" style="background:${QCOLORS[a.q]}"></div><span>${a.name} <span style="color:var(--text-dim)">${d} ${o} |Δ|=${a.mag.toFixed(3)}</span></span></div>`;
+    }).join('');
+  }
+}
+
+function updateSensitivity(m, ings) {
+  if (!chart2inst) return;
+  const arrows = computeArrows(m, ings);
+  const maxMag = Math.max(...arrows.map(a=>a.mag), 0.001);
+  const SCALE  = Math.min(0.55/maxMag, 15);
+  const ds = chart2inst.data.datasets;
+  ds[0].data = [{x:m.BfX, y:m.BfY}];
+  arrows.forEach((a,i) => {
+    const d = ds[i+1]; if (!d) return;
+    d.label = `+10% ${a.name}`; d._arrow = a;
+    d.data  = [{x:m.BfX,y:m.BfY},{x:m.BfX+a.dx*SCALE,y:m.BfY+a.dy*SCALE}];
+  });
+  const allPts = [{x:m.BfX,y:m.BfY},...arrows.map(a=>({x:m.BfX+a.dx*SCALE,y:m.BfY+a.dy*SCALE}))];
+  const b = chartBounds(allPts);
+  chart2inst.options.scales.x.min = b.min; chart2inst.options.scales.x.max = b.max;
+  chart2inst.options.scales.y.min = b.min; chart2inst.options.scales.y.max = b.max;
+  chart2inst.update('none');
+  const leg = document.getElementById('legend2Mob');
+  if (leg) {
+    leg.innerHTML = arrows.map(a => {
+      const d = a.dx>0.005?('→dren'):a.dx<-0.005?('←abs'):'—';
+      const o = a.dy>0.005?('↑inorg'):a.dy<-0.005?('↓org'):'—';
+      return `<div class="legend-item-mob"><div class="legend-line-mob" style="background:${QCOLORS[a.q]}"></div><span>${a.name} <span style="color:var(--text-dim)">${d} ${o} |Δ|=${a.mag.toFixed(3)}</span></span></div>`;
+    }).join('');
+  }
+}
+
+// ─── RENDER RESULTS ───────────────────────────────────────────────
+function renderResults(m, ings) {
+  const qB=quadrantOf(m.Bx,m.By), qBg=quadrantOf(m.BgX,m.BgY), qBf=quadrantOf(m.BfX,m.BfY);
+
+  // Summary cards
+  document.getElementById('summaryCardsMob').innerHTML = `
+    <div class="result-card-mob">
+      <div class="rc-label">Tendência Estrutural</div>
+      <div class="rc-coords">(${m.Bx.toFixed(3)}, ${m.By.toFixed(3)})</div>
+      <span class="qtag" style="background:${QBG[qB]};color:${QCOLORS[qB]};border:1px solid ${QBORD[qB]}">${qB} — ${quadrantLabel(qB)}</span>
+    </div>
+    <div class="result-card-mob">
+      <div class="rc-label">Tendência Granulométrica</div>
+      <div class="rc-coords">(${m.BgX.toFixed(3)}, ${m.BgY.toFixed(3)})</div>
+      <div class="rc-sub">${m.Ig!=null?`Ig=${m.Ig.toFixed(3)} · ΔX=${m.dXg.toFixed(3)}`:Object.keys(m.intraQ||{}).length>0?(()=>{const q=Object.keys(m.intraQ)[0];const iq=m.intraQ[q];return`TRG(${q})=${iq.Icd.toFixed(3)}`;})():'—'}</div>
+      <span class="qtag" style="background:${QBG[qBg]};color:${QCOLORS[qBg]};border:1px solid ${QBORD[qBg]}">${qBg} — ${quadrantLabel(qBg)}</span>
+    </div>
+    <div class="result-card-mob">
+      <div class="rc-label">Tendência Final (B★)</div>
+      <div class="rc-coords">(${m.BfX.toFixed(3)}, ${m.BfY.toFixed(3)})</div>
+      <div class="rc-sub">Rd=${m.Rd.toFixed(3)} · Rd_ef=${m.RdEf.toFixed(3)}</div>
+      <span class="qtag" style="background:${QBG[qBf]};color:${QCOLORS[qBf]};border:1px solid ${QBORD[qBf]}">${qBf} — ${quadrantLabel(qBf)}</span>
+    </div>`;
+
+  // Interpretation
+  let hydroLabel, hydroColor, hydroConseq;
+  if(m.BfX>0.2){hydroLabel='Tendência Drenante';hydroColor='#6fcf7a';hydroConseq='A água tende a percolar rapidamente após a irrigação. Favorece a difusão de oxigênio na rizosfera e reduz o tempo de saturação — mas aumenta a dependência da frequência de irrigação.';}
+  else if(m.BfX<-0.2){hydroLabel='Tendência Absorvente';hydroColor='#6ab4e8';hydroConseq='O substrato retém água por mais tempo após a irrigação. Favorável em espécies com maior demanda hídrica, mas exige atenção ao risco de saturação prolongada.';}
+  else{hydroLabel='Tendência Equilibrada';hydroColor='#cdd4cd';hydroConseq='Equilíbrio relativo entre macroporos e microporos estruturais.';}
+  let strucLabel, strucColor, strucConseq;
+  if(m.BfY>0.2){strucLabel='Predominância Mineral';strucColor='#6fcf7a';strucConseq='Alta estabilidade estrutural com baixa transformação por decomposição.';}
+  else if(m.BfY<-0.2){strucLabel='Predominância Orgânica';strucColor='#e87a6a';strucConseq='Maior fração orgânica favorece retenção hídrica, mas implica transformação estrutural ao longo do tempo.';}
+  else{strucLabel='Balanço Mineral-Orgânico';strucColor='#cdd4cd';strucConseq='Mistura equilibrada entre frações minerais e orgânicas.';}
+  let granLabel, granColor, granConseq;
+  const iqKeys=Object.keys(m.intraQ||{});
+  const iq=iqKeys.length?m.intraQ[iqKeys[0]]:null;
+  if(m.Ig!=null){
+    if(m.Ig>1.3){granLabel='Absorventes Relativamente Grossos';granColor='#e8c96a';granConseq='Os materiais absorventes têm granulometria maior que os drenantes. Menor capilaridade efetiva.';}
+    else if(m.Ig<0.7){granLabel='Absorventes Relativamente Finos';granColor='#e87a6a';granConseq='Risco de preenchimento intergranular — os finos ocupam espaços entre os grãos maiores.';}
+    else{granLabel='Equilíbrio Granulométrico';granColor='#6fcf7a';granConseq='Granulometrias proporcionais — comportamento hidráulico previsível.';}
+  } else if(iq&&iq.Icd!=null){
+    if(iq.Icd>0.7){granLabel='Dispersão Granulométrica Adequada';granColor='#6fcf7a';granConseq='Granulometrias complementares, estrutura estável.';}
+    else if(iq.Icd>0.4){granLabel='Dispersão Granulométrica Moderada';granColor='#e8c96a';granConseq='Heterogeneidade moderada entre os componentes.';}
+    else{granLabel='Dispersão Granulométrica Elevada';granColor='#e87a6a';granConseq='Grande diferença granulométrica — risco de comprometimento da drenagem.';}
+  } else{granLabel='Granulometria Não Informada';granColor='var(--text-dim)';granConseq='Informe a granulometria dos componentes para análise completa.';}
+  let degLabel, degColor, degConseq;
+  const rdFromQ4Only=m.Oa===0&&m.Od>0;
+  if(m.Rd===0){degLabel='Totalmente Inorgânico';degColor='#6fcf7a';degConseq='Sem fração orgânica — estrutura altamente estável.';}
+  else if(m.Rd<0.2){degLabel='Baixa Degradabilidade';degColor='#6fcf7a';degConseq='Fração orgânica pequena — alta estabilidade estrutural esperada.';}
+  else if(m.Rd<=0.5){degLabel='Transformação Gradual Possível';degColor='#e8c96a';degConseq='Fração orgânica pode se decompor ao longo do tempo. Monitore compactação e drenagem.';}
+  else{degLabel='Alta Transformação Esperada';degColor='#e87a6a';degConseq='Grande fração orgânica — risco de compactação progressiva e redução da aeração radicular.';}
+
+  document.getElementById('interpCardMob').innerHTML = `
+    <div class="interp-grid-mob">
+      <div class="interp-item-mob" style="border-color:${hydroColor}">
+        <span class="q-info-btn" onclick="openInterpPopup('hidraulico')" style="position:absolute;top:8px;right:8px">?</span>
+        <div class="ilabel">Comportamento Hidráulico</div>
+        <div class="ivalue" style="color:${hydroColor}">${hydroLabel}</div>
+        <div class="itext">${hydroConseq}</div>
+        <div class="idesc">eixo X = ${m.BfX.toFixed(3)}</div>
+      </div>
+      <div class="interp-item-mob" style="border-color:${strucColor}">
+        <span class="q-info-btn" onclick="openInterpPopup('fisicoquimica')" style="position:absolute;top:8px;right:8px">?</span>
+        <div class="ilabel">Natureza Físico-Química</div>
+        <div class="ivalue" style="color:${strucColor}">${strucLabel}</div>
+        <div class="itext">${strucConseq}</div>
+        <div class="idesc">eixo Y = ${m.BfY.toFixed(3)}</div>
+      </div>
+      <div class="interp-item-mob" style="border-color:${granColor}">
+        <span class="q-info-btn" onclick="openInterpPopup('trg')" style="position:absolute;top:8px;right:8px">?</span>
+        <div class="ilabel">Tendência Relativa Granulométrica</div>
+        <div class="ivalue" style="color:${granColor}">${granLabel}</div>
+        <div class="itext">${granConseq}</div>
+        <div class="idesc">${m.Ig!=null?`Ig = ${m.Ig.toFixed(3)}`:''}${m.Icd!=null?` · Icd = ${m.Icd.toFixed(3)}`:''}</div>
+      </div>
+      <div class="interp-item-mob" style="border-color:${degColor}">
+        <span class="q-info-btn" onclick="openInterpPopup('degradabilidade')" style="position:absolute;top:8px;right:8px">?</span>
+        <div class="ilabel">Potencial de Degradabilidade</div>
+        <div class="ivalue" style="color:${degColor}">${degLabel}</div>
+        <div class="itext">${degConseq}</div>
+        <div class="idesc">Rd = ${m.Rd.toFixed(3)}</div>
+      </div>
+    </div>
+    <div class="warn-note-mob">
+      <span style="color:var(--amber);font-size:8px;letter-spacing:.5px;text-transform:uppercase">⚠ leitura conjunta</span><br>
+      Os quatro painéis podem apresentar características parcialmente contrastantes — isso é esperado. A avaliação final deve considerar todos os indicadores simultaneamente.
+    </div>`;
+
+  // Indices
+  const row1col1=`<div class="index-row-mob" style="border-color:#6fcf7a"><div><div class="idx-name-mob">Vetor Resultante R</div><div class="idx-val-mob">(${m.Rx.toFixed(1)}, ${m.Ry.toFixed(1)})</div></div></div>`;
+  const row1col2=`<div class="index-row-mob" style="border-color:#888"><div><div class="idx-name-mob">Bs — Baricentro Simples</div><div class="idx-val-mob">(${m.Bsx.toFixed(3)}, ${m.Bsy.toFixed(3)})</div><div class="idx-desc-mob">tendência material</div></div></div>`;
+  const row2col1=`<div class="index-row-mob" style="border-color:#aaa"><div><div class="idx-name-mob">Baricentro B</div><div class="idx-val-mob">(${m.Bx.toFixed(3)}, ${m.By.toFixed(3)})</div><div class="idx-desc-mob">R normalizado</div></div></div>`;
+  const row2col2=`<div class="index-row-mob" style="border-color:#6ab4e8"><div><div class="idx-name-mob">Baricentro Bg</div><div class="idx-val-mob">(${m.BgX.toFixed(3)}, ${m.BgY.toFixed(3)})</div><div class="idx-desc-mob">ΔXg=${m.dXg>0?'+':''}${m.dXg.toFixed(3)}</div></div></div>`;
+  const row3col1=m.Ig!=null?`<div class="index-row-mob" style="border-color:#e8c96a"><div><div class="idx-name-mob">Ig = GA / GD</div><div class="idx-val-mob">${m.Ig.toFixed(3)}</div><div class="idx-desc-mob">GD=${m.GD!=null?m.GD.toFixed(2):'—'}mm · GA=${m.GA!=null?m.GA.toFixed(2):'—'}mm</div></div></div>`:`<div class="index-row-mob" style="border-color:#e8c96a44"><div><div class="idx-name-mob">Ig = GA / GD</div><div class="idx-val-mob" style="color:var(--text-dim)">—</div></div></div>`;
+  const icdHtml=m.Icd!=null?`<div class="idx-desc-mob" style="color:${m.Icd<0.5?'var(--red)':m.Icd<0.8?'var(--amber)':'var(--text-dim)'}">Q1: Icd=${m.Icd.toFixed(3)} — ${m.Icd>0.7?'estável':m.Icd>0.4?'intermediário':'⚠ colapso'}</div>`:'';
+  const icd4Html=m.Icd4!=null?`<div class="idx-desc-mob" style="color:${m.Icd4<0.5?'var(--red)':m.Icd4<0.8?'var(--amber)':'var(--text-dim)'}">Q4: Icd=${m.Icd4.toFixed(3)} — ${m.Icd4>0.7?'estável':m.Icd4>0.4?'intermediário':'⚠ colapso'}</div>`:'';
+  const hasTRG=m.Icd!=null||m.Icd4!=null||Object.keys(m.intraQ||{}).length>0;
+  const somenteDrenantes=m.Ia===0&&m.Oa===0&&(m.Id>0||m.Od>0);
+  const somenteAbsorventes=m.Id===0&&m.Od===0&&(m.Ia>0||m.Oa>0);
+  const quadrantesAtivos=[m.Id>0,m.Ia>0,m.Oa>0,m.Od>0].filter(Boolean).length;
+  const monoQuadrante=quadrantesAtivos===1;
+  const trgAplica=hasTRG&&(monoQuadrante||somenteDrenantes||somenteAbsorventes);
+  const row3col2=trgAplica?`<div class="index-row-mob" style="border-color:#e8c96a"><div><div class="idx-name-mob">TRG — Interpolação</div><div class="idx-val-mob" style="font-size:11px">${(()=>{const parts=[];Object.keys(m.intraQ||{}).forEach(q=>{const iq=m.intraQ[q];if(iq&&iq.Icd!=null)parts.push(`${q}=${iq.Icd.toFixed(3)}`);});if(m.Icd!=null&&!parts.some(p=>p.startsWith('Q1')))parts.unshift(`Q1=${m.Icd.toFixed(3)}`);if(m.Icd4!=null&&!parts.some(p=>p.startsWith('Q4')))parts.push(`Q4=${m.Icd4.toFixed(3)}`);return parts.join(' · ')||'—';})()}</div>${icdHtml}${icd4Html}</div></div>`:`<div class="index-row-mob" style="border-color:#e8c96a44"><div><div class="idx-name-mob">TRG — Interpolação</div><div class="idx-val-mob" style="color:var(--text-dim)">—</div></div></div>`;
+  const row4col1=`<div class="index-row-mob" style="border-color:#e87a6a"><div><div class="idx-name-mob">Rd = ${m.Oa>0?'Oa':'Od'} / S</div><div class="idx-val-mob">${m.Rd.toFixed(3)}</div><div class="idx-desc-mob">Rd_ef=${m.RdEf.toFixed(3)}</div></div></div>`;
+  const row4col2=`<div class="index-row-mob" style="border-color:#e8c96a"><div><div class="idx-name-mob">Baricentro Final B★</div><div class="idx-val-mob">(${m.BfX.toFixed(3)}, ${m.BfY.toFixed(3)})</div><div class="idx-desc-mob">${qBf} — ${quadrantLabel(qBf)}</div></div></div>`;
+  document.getElementById('calcTableMob').innerHTML = row1col1+row1col2+row2col1+row2col2+row3col1+row3col2+row4col1+row4col2;
+
+  // Sensitivity table
+  const arrows = computeArrows(m, ings);
+  const maxMag = Math.max(...arrows.map(a=>a.mag), 0.001);
+  const sensRows = [...arrows].sort((a,b)=>b.mag-a.mag).map(a=>{
+    const w = Math.round(a.mag/maxMag*60);
+    const dDir = a.dx>0.005?'+dren':a.dx<-0.005?'-abs':'—';
+    const oDir = a.dy>0.005?'+inorg':a.dy<-0.005?'-org':'—';
+    return `<tr>
+      <td><span class="qtag" style="background:${QBG[a.q]};color:${QCOLORS[a.q]}">${a.q}</span></td>
+      <td>${a.name}</td><td style="text-align:right">${a.pct}%</td>
+      <td style="text-align:right;color:${a.dx>=0?'#6fcf7a':'#e87a6a'}">${a.dx>=0?'+':''}${a.dx.toFixed(3)}</td>
+      <td style="text-align:right;color:${a.dy>=0?'#6fcf7a':'#e87a6a'}">${a.dy>=0?'+':''}${a.dy.toFixed(3)}</td>
+      <td><div class="bar-bg-mob"><div class="bar-fill-mob" style="width:${w}px;background:${QCOLORS[a.q]}"></div></div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('sensTableMob').innerHTML = `<thead><tr><th>Classe</th><th>Ingrediente</th><th style="text-align:right">%</th><th style="text-align:right">ΔX</th><th style="text-align:right">ΔY</th><th>Influência</th></tr></thead><tbody>${sensRows}</tbody>`;
+
+  // Compo bars
+  document.getElementById('compoBarsMob').innerHTML = [
+    {q:'Q1',pct:m.Id,col:'#6fcf7a'},{q:'Q2',pct:m.Ia,col:'#6ab4e8'},
+    {q:'Q3',pct:m.Oa,col:'#e87a6a'},{q:'Q4',pct:m.Od,col:'#e8c96a'},
+  ].map(d=>`<div class="compo-bar-row">
+    <span style="color:${d.col};min-width:22px;font-size:9px;letter-spacing:1px">${d.q}</span>
+    <div class="bar-bg-mob" style="flex:1;height:6px"><div class="bar-fill-mob" style="width:${Math.max(0,Math.min(100,d.pct))}%;background:${d.col}"></div></div>
+    <span style="color:var(--text-dim);min-width:30px;text-align:right">${d.pct.toFixed(0)}%</span>
+  </div>`).join('');
+
+  // PDF data (same as desktop)
+  const qOrder=['Q1','Q2','Q3','Q4'];
+  let calcRows='';
+  qOrder.forEach(q=>{
+    const qIngs=ings.map((ing,i)=>({...ing,vec:m.vecs[i]})).filter(x=>x.q===q);
+    if(!qIngs.length) return;
+    const totalPct=qIngs.reduce((s,x)=>s+x.pct,0);
+    const avgGran=qIngs.some(x=>x.gran!=null)?qIngs.filter(x=>x.gran!=null).reduce((s,x)=>s+x.gran*x.pct,0)/qIngs.filter(x=>x.gran!=null).reduce((s,x)=>s+x.pct,0):null;
+    calcRows+=`<tr style="background:${QBG[q]};border-top:2px solid ${QBORD[q]}"><td colspan="2" style="color:${QCOLORS[q]};font-size:10px;letter-spacing:1px;font-weight:600;padding:6px 11px">${q} — ${quadrantLabel(q)}</td><td style="text-align:right;color:${QCOLORS[q]};font-weight:600">${totalPct}%</td><td style="text-align:right;color:var(--text-dim);font-size:10px">${avgGran!=null?'⌀ '+avgGran.toFixed(1)+'mm':'—'}</td><td></td><td></td></tr>`;
+    qIngs.forEach(x=>{calcRows+=`<tr><td style="padding-left:20px;color:var(--text-dim);font-size:10px">↳</td><td>${x.name}</td><td style="text-align:right">${x.pct}%</td><td style="text-align:right;color:var(--text-dim)">${x.gran!=null?x.gran+'mm':'—'}</td><td style="text-align:right;color:${x.vec[0]>=0?'#6fcf7a':'#e87a6a'}">${x.vec[0]>=0?'+':''}${x.vec[0].toFixed(1)}</td><td style="text-align:right;color:${x.vec[1]>=0?'#6fcf7a':'#e87a6a'}">${x.vec[1]>=0?'+':''}${x.vec[1].toFixed(1)}</td></tr>`;});
+  });
+  const bRows=[{lbl:'B',x:m.Bx,y:m.By,col:'#aaa'},{lbl:'Bg',x:m.BgX,y:m.BgY,col:'#6ab4e8'},{lbl:'B*',x:m.BfX,y:m.BfY,col:'#e8c96a'}].map(b=>`<tr><td colspan="2" style="color:${b.col};font-size:10px;font-weight:600">${b.lbl}</td><td></td><td></td><td style="text-align:right;color:${b.x>=0?'#6fcf7a':'#e87a6a'}">${b.x>=0?'+':''}${b.x.toFixed(3)}</td><td style="text-align:right;color:${b.y>=0?'#6fcf7a':'#e87a6a'}">${b.y>=0?'+':''}${b.y.toFixed(3)}</td></tr>`).join('');
+  document.getElementById('calcTableCompo').innerHTML=`<table><thead><tr><th colspan="2">Componente</th><th style="text-align:right">%</th><th style="text-align:right">Gran.</th><th style="text-align:right">vX</th><th style="text-align:right">vY</th></tr></thead><tbody>${calcRows}<tr><td colspan="6" style="padding:0;border-top:2px solid #ccc"></td></tr>${bRows}</tbody></table>`;
+
+  // PDF interp
+  const qBnames={Q1:'Drenante Inorgânico',Q2:'Absorvente Inorgânico',Q3:'Absorvente Orgânico',Q4:'Drenante Orgânico'};
+  document.getElementById('pdfInterpBlock').innerHTML=`<h4>Leitura dos Baricentros</h4><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#e8e8e8"><th style="padding:5px 8px;text-align:left">Ponto</th><th style="padding:5px 8px;text-align:center">Coordenadas</th><th style="padding:5px 8px;text-align:left">Quadrante</th><th style="padding:5px 8px;text-align:left">Interpretação</th></tr></thead><tbody><tr><td style="padding:5px 8px;font-weight:600;color:#555">B</td><td style="padding:5px 8px;text-align:center;font-family:monospace">(${m.Bx.toFixed(3)}, ${m.By.toFixed(3)})</td><td style="padding:5px 8px">${quadrantOf(m.Bx,m.By)} — ${qBnames[quadrantOf(m.Bx,m.By)]}</td><td style="padding:5px 8px;color:#555">Posição estrutural bruta — ${ings.length} componentes</td></tr><tr><td style="padding:5px 8px;font-weight:600;color:#1a5c82">Bg</td><td style="padding:5px 8px;text-align:center;font-family:monospace">(${m.BgX.toFixed(3)}, ${m.BgY.toFixed(3)})</td><td style="padding:5px 8px">${quadrantOf(m.BgX,m.BgY)} — ${qBnames[quadrantOf(m.BgX,m.BgY)]}</td><td style="padding:5px 8px;color:#555">ΔX=${m.dXg.toFixed(3)}</td></tr><tr><td style="padding:5px 8px;font-weight:600;color:#8a6a00">B*</td><td style="padding:5px 8px;text-align:center;font-family:monospace">(${m.BfX.toFixed(3)}, ${m.BfY.toFixed(3)})</td><td style="padding:5px 8px">${quadrantOf(m.BfX,m.BfY)} — ${qBnames[quadrantOf(m.BfX,m.BfY)]}</td><td style="padding:5px 8px;color:#555">Δ=(${m.dXd.toFixed(3)},${m.dYd.toFixed(3)}) · Rd=${m.Rd.toFixed(2)}</td></tr></tbody></table>`;
+
+  // PDF sens table
+  const arrows3=computeArrows(m,ings);
+  const maxMag3=Math.max(...arrows3.map(a=>a.mag),0.001);
+  const sensRows3=[...arrows3].sort((a,b)=>b.mag-a.mag).map(a=>{
+    const w=Math.round(a.mag/maxMag3*80);
+    const dDir=a.dx>0.005?'+dren':a.dx<-0.005?'-abs':'—';
+    const oDir=a.dy>0.005?'+inorg':a.dy<-0.005?'-org':'—';
+    return`<tr><td><span class="qtag" style="background:${QBG[a.q]};color:${QCOLORS[a.q]}">${a.q}</span></td><td>${a.name}</td><td style="text-align:right">${a.pct}%</td><td style="text-align:right;color:${a.dx>=0?'#6fcf7a':'#e87a6a'}">${a.dx>=0?'+':''}${a.dx.toFixed(3)}</td><td style="text-align:right;color:${a.dy>=0?'#6fcf7a':'#e87a6a'}">${a.dy>=0?'+':''}${a.dy.toFixed(3)}</td><td>${dDir}</td><td>${oDir}</td><td><div class="bar-bg" style="width:80px"><div class="bar-fill" style="width:${w}px;background:${QCOLORS[a.q]}"></div></div></td></tr>`;
+  }).join('');
+  document.getElementById('sensTablePdf').innerHTML=`<table><thead><tr><th>Classe</th><th>Ingrediente</th><th style="text-align:right">%</th><th style="text-align:right">ΔX</th><th style="text-align:right">ΔY</th><th>Hidráulico</th><th>Estrutural</th><th>Influência ▸</th></tr></thead><tbody>${sensRows3}</tbody></table>`;
+}
+
+// ─── LIVE RECALC ──────────────────────────────────────────────────
+let _liveTimer = null;
+function liveRecalcDebounced() {
+  clearTimeout(_liveTimer);
+  _liveTimer = setTimeout(liveRecalc, 120);
+}
+function liveRecalc(src) {
+  const valid = ingredients.filter(i => i.pct != null && !isNaN(i.pct));
+  if (valid.length < 1) return;
+  const total = valid.reduce((s,i) => s+i.pct, 0);
+  if (valid.length > 1 && Math.abs(total-100) > 2) return;
+  const normalized = valid.length === 1 ? [{...valid[0], pct:100}] : valid;
+  const m = computeModel(normalized);
+  renderResults(m, normalized);
+  if (_isDragging) {
+    if (chart1inst) {
+      chart1inst._mobModel = m;
+      const ds = chart1inst.data.datasets;
+      normalized.forEach((ing,i)=>{ if(ds[i]){ ds[i].label=`${ing.name} ${ing.pct}%`; ds[i].data=[{x:0,y:0},{x:m.vecs[i][0]/100,y:m.vecs[i][1]/100}]; }});
+      const pathDS=ds.find(d=>d._isPath); if(pathDS) pathDS.data=[{x:m.Bx,y:m.By},{x:m.BgX,y:m.BgY},{x:m.BfX,y:m.BfY}];
+      const bDS=ds.find(d=>d._isB); if(bDS) bDS.data=[{x:m.Bx,y:m.By}];
+      const bgDS=ds.find(d=>d._isBg); if(bgDS) bgDS.data=[{x:m.BgX,y:m.BgY}];
+      const bfDS=ds.find(d=>d._isBf); if(bfDS) bfDS.data=[{x:m.BfX,y:m.BfY}];
+      chart1inst.update('none');
+    }
+    updateSensitivity(m, normalized);
+  } else {
+    if (document.getElementById('chartsContentMob').style.display !== 'none') {
+      drawDiagram(m, normalized, 'chart1Mob', 'legend1Mob');
+      setupChart1Touch(m, normalized);
+      drawSensitivity(m, normalized, 'chart2Mob', 'legend2Mob');
+    }
+  }
+}
+
+// ─── CALCULATE BUTTON ─────────────────────────────────────────────
+document.getElementById('btnCalcMob').onclick = () => {
+  if (ingredients.length < 1) { showToast('Insira pelo menos 1 componente.'); return; }
+  const total = ingredients.reduce((s,i) => s+i.pct, 0);
+  if (total <= 0) { showToast('Insira percentuais maiores que zero.'); return; }
+  if (Math.abs(total-100) > 0.01) {
+    const diff = parseFloat((100-total).toFixed(4));
+    const maxIdx = ingredients.reduce((mi,ing,ii,arr) => ing.pct>arr[mi].pct?ii:mi, 0);
+    ingredients[maxIdx].pct = parseFloat((ingredients[maxIdx].pct+diff).toFixed(4));
+    renderIngredients();
+  }
+  const m = computeModel(ingredients);
+  // Show result sections
+  document.getElementById('emptyMob').style.display = 'none';
+  document.getElementById('resultsContentMob').style.display = 'block';
+  document.getElementById('emptyChartsMob').style.display = 'none';
+  document.getElementById('chartsContentMob').style.display = 'block';
+  document.getElementById('emptyIdxMob').style.display = 'none';
+  document.getElementById('indicesContentMob').style.display = 'block';
+  document.getElementById('compoBarSection').style.display = 'block';
+  renderResults(m, ingredients);
+  requestAnimationFrame(() => {
+    drawDiagram(m, ingredients, 'chart1Mob', 'legend1Mob');
+    setupChart1Touch(m, ingredients);
+    drawSensitivity(m, ingredients, 'chart2Mob', 'legend2Mob');
+    // PDF charts
+    drawDiagram(m, ingredients, 'chart1Pdf', 'legend1Pdf');
+    drawSensitivity(m, ingredients, 'chart2Pdf', 'legend2Pdf');
+  });
+  historySave(ingredients);
+  document.getElementById('pdfDate').textContent = new Date().toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
+  showToast('Modelo calculado ✓');
+  switchTab('results');
+};
+
+// ─── PDF ──────────────────────────────────────────────────────────
+document.getElementById('btnPdfMob').onclick = () => {
+  if (document.getElementById('resultsContentMob').style.display === 'none') {
+    showToast('Calcule o modelo primeiro.');
+    return;
+  }
+  // ensure sensTable wrap open for PDF
+  document.getElementById('sensBodyMob').classList.add('open');
+  window.print();
+};
+
+// ─── COLLAPSIBLE ─────────────────────────────────────────────────
+function toggleMobSection(bodyId, chevId) {
+  const body = document.getElementById(bodyId);
+  const chev = document.getElementById(chevId);
+  const isOpen = body.classList.toggle('open');
+  if (chev) chev.classList.toggle('open', isOpen);
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────
+const HISTORY_KEY = 'substrato_history_v1';
+function _storage() {
+  try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return localStorage; }
+  catch(e) { return sessionStorage; }
+}
+function historyLoad() {
+  try { return JSON.parse(_storage().getItem(HISTORY_KEY)) || []; }
+  catch(e) { return []; }
+}
+function historySave(ings) {
+  const list = historyLoad();
+  const now = new Date();
+  const label = now.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) + ' ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const top = [...ings].sort((a,b)=>b.pct-a.pct).slice(0,3).map(i=>`${i.pct.toFixed(0)}% ${i.name}`).join(' · ');
+  const qPcts = {Q1:0,Q2:0,Q3:0,Q4:0};
+  ings.forEach(i=>{ qPcts[i.q]=(qPcts[i.q]||0)+i.pct; });
+  const domQ = Object.entries(qPcts).sort((a,b)=>b[1]-a[1])[0][0];
+  const entry = {id:Date.now(), label, top, domQ, ings:JSON.parse(JSON.stringify(ings))};
+  list.unshift(entry);
+  if (list.length > 5) list.length = 5;
+  _storage().setItem(HISTORY_KEY, JSON.stringify(list));
+  renderHistory();
+}
+function historyClear() {
+  _storage().removeItem(HISTORY_KEY);
+  renderHistory();
+}
+function historyDelete(id, e) {
+  e.stopPropagation();
+  const list = historyLoad().filter(h => h.id !== id);
+  _storage().setItem(HISTORY_KEY, JSON.stringify(list));
+  renderHistory();
+}
+function historyRestore(ingsJson) {
+  ingredients = JSON.parse(ingsJson);
+  renderIngredients();
+  updateTotal();
+  const m = computeModel(ingredients);
+  document.getElementById('emptyMob').style.display = 'none';
+  document.getElementById('resultsContentMob').style.display = 'block';
+  document.getElementById('emptyChartsMob').style.display = 'none';
+  document.getElementById('chartsContentMob').style.display = 'block';
+  document.getElementById('emptyIdxMob').style.display = 'none';
+  document.getElementById('indicesContentMob').style.display = 'block';
+  document.getElementById('compoBarSection').style.display = 'block';
+  renderResults(m, ingredients);
+  requestAnimationFrame(() => {
+    drawDiagram(m, ingredients, 'chart1Mob', 'legend1Mob');
+    setupChart1Touch(m, ingredients);
+    drawSensitivity(m, ingredients, 'chart2Mob', 'legend2Mob');
+    drawDiagram(m, ingredients, 'chart1Pdf', 'legend1Pdf');
+    drawSensitivity(m, ingredients, 'chart2Pdf', 'legend2Pdf');
+  });
+  showToast('Formulação restaurada ✓');
+}
+function renderHistory() {
+  const list = historyLoad();
+  const el = document.getElementById('historyListMob');
+  const btn = document.getElementById('btnHistClearMob');
+  if (!list.length) {
+    el.innerHTML = '<div class="history-empty">nenhum cálculo ainda</div>';
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+  if (btn) btn.style.display = 'block';
+  el.innerHTML = list.map(h => `
+    <div class="history-item" onclick="historyRestore(this.dataset.ings)" data-ings='${JSON.stringify(h.ings).replace(/'/g,"&#39;")}'>
+      <div class="history-dot" style="background:${QCOLORS[h.domQ]}"></div>
+      <div class="history-info">
+        <div class="history-name">${h.top}</div>
+        <div class="history-meta">${h.label} · ${h.ings.length} comp.</div>
+      </div>
+      <button class="history-del" onclick="historyDelete(${h.id},event)">×</button>
+    </div>`).join('');
+}
+
+// ─── POPUPS ───────────────────────────────────────────────────────
+function getPopupData() {
+  return {
+    Q1:{color:'#6fcf7a',bg:'rgba(111,207,122,.12)',tag:'Q1 — Drenante Mineral',title:'Drenante Mineral',
+      body:['Materiais minerais com baixa absorção de água e alta estabilidade estrutural. Formam macroporos permanentes no substrato, garantindo drenagem rápida e aeração contínua.',
+            'São inertes e estruturalmente estáveis — função essencialmente de suporte físico e manutenção da estrutura.'],
+      gran:'Granulometria típica: 2 – 10 mm',
+      exemplos:'pedrisco, areia grossa, caco de telha, brita fina, pumice, lava rock, perlita, carvão vegetal de baixa retenção',
+      note:'O carvão vegetal é inerte — não degrada. Classificação depende da retenção hídrica: baixa retenção = Q1; alta absorção = Q2.'},
+    Q2:{color:'#6ab4e8',bg:'rgba(106,180,232,.12)',tag:'Q2 — Absorvente Mineral',title:'Absorvente Mineral',
+      body:['Materiais minerais que retêm água em micro e mesoporos. São quimicamente estáveis e não sofrem degradação.',
+            'A classificação é determinada pela relação peso seco/úmido: grande diferença indica alta retenção hídrica.'],
+      gran:'Granulometria típica: 0,1 – 5 mm',
+      exemplos:'akadama, zeólita, diatomita, argilas calcinadas, bentonita, vermiculita, carvão vegetal de alta absorção',
+      note:'A vermiculita tem alta CTC — comportamento típico de Q2.'},
+    Q3:{color:'#e87a6a',bg:'rgba(232,122,106,.12)',tag:'Q3 — Absorvente Orgânico',title:'Absorvente Orgânico',
+      body:['Materiais orgânicos com alta capacidade de absorção, grande área superficial e elevada CTC.',
+            'São estruturalmente menos estáveis e sofrem decomposição progressiva.'],
+      gran:'Granulometria típica: 1 – 6 mm',
+      exemplos:'turfa, sphagnum, fibra de coco, composto orgânico, húmus, casca de arroz in natura',
+      note:'Materiais pulverizados podem ser representados como 0,1 mm no modelo.'},
+    Q4:{color:'#e8c96a',bg:'rgba(232,201,106,.12)',tag:'Q4 — Drenante Orgânico',title:'Drenante Orgânico',
+      body:['Materiais orgânicos que promovem aeração e macroporos. Apresentam maior umidade residual que Q1.',
+            'Com o tempo, podem se decompor e migrar funcionalmente para a fração absorvente.'],
+      gran:'Granulometria típica: 3 – 15 mm',
+      exemplos:'casca de pinus, chips de madeira, bark chips, fibra de coco longa, casca de arroz carbonizada',
+      note:'A casca de arroz carbonizada = Q4: comportamento drenante com umidade residual elevada.'},
+  };
+}
+function getInterpPopupData() {
+  return {
+    hidraulico:{color:'#6fcf7a',bg:'rgba(111,207,122,.12)',tag:'Comportamento Hidráulico',title:'Como o substrato se comporta com a água',body:['O comportamento hidráulico é determinado pela posição do baricentro no eixo X — representa o equilíbrio entre macroporos (que drenam) e microporos (que retêm água).'],variacoes:[{label:'Tendência Drenante (X > 0,2)',texto:'Predominância de macroporos. Água percola rapidamente, favorece aeração radicular.'},{label:'Tendência Equilibrada (−0,2 ≤ X ≤ 0,2)',texto:'Equilíbrio entre macroporos e microporos. Estabilidade hídrica.'},{label:'Tendência Absorvente (X < −0,2)',texto:'Predominância de microporos. Retém água por mais tempo — risco de saturação.'}],note:'O eixo X é influenciado pela proporção e granulometria dos materiais drenantes vs absorventes.'},
+    fisicoquimica:{color:'#6ab4e8',bg:'rgba(106,180,232,.12)',tag:'Natureza Físico-Química',title:'Composição mineral e orgânica',body:['A natureza físico-química é determinada pela posição no eixo Y — representa o balanço entre componentes minerais (Q1, Q2) e orgânicos (Q3, Q4).'],variacoes:[{label:'Predominância Mineral (Y > 0,2)',texto:'Alta estabilidade estrutural, baixa transformação por decomposição.'},{label:'Balanço Mineral-Orgânico (−0,2 ≤ Y ≤ 0,2)',texto:'Mistura equilibrada — combina estabilidade com retenção hídrica.'},{label:'Predominância Orgânica (Y < −0,2)',texto:'Maior transformação estrutural ao longo do tempo.'}],note:'Q1 e Q2 puxam para o lado mineral (Y+); Q3 e Q4 puxam para o orgânico (Y−).'},
+    trg:{color:'#e8c96a',bg:'rgba(232,201,106,.12)',tag:'TRG — Tendência Relativa Granulométrica',title:'Relação entre as granulometrias',body:['A TRG é calculada pelo índice Ig = GA/GD. Indica se os absorventes são proporcionalmente finos, equilibrados ou grossos em relação aos drenantes.'],variacoes:[{label:'Absorventes Finos (Ig < 0,7)',texto:'Risco de preenchimento intergranular — finos nos espaços entre grãos maiores.'},{label:'Equilíbrio Granulométrico (0,7 ≤ Ig ≤ 1,3)',texto:'Granulometrias proporcionais — comportamento hidráulico previsível.'},{label:'Absorventes Grossos (Ig > 1,3)',texto:'Menor capilaridade efetiva e menor uniformidade de umedecimento.'}],note:'O Índice de Colapso Granulométrico (Icd) complementa a TRG: Icd > 0,7 = estável.'},
+    degradabilidade:{color:'#e87a6a',bg:'rgba(232,122,106,.12)',tag:'Potencial de Degradabilidade',title:'Estabilidade estrutural ao longo do tempo',body:['O Rd indica o quanto a estrutura tende a se transformar ao longo do tempo por decomposição.'],variacoes:[{label:'Baixa Degradabilidade (Rd < 0,2)',texto:'Alta estabilidade estrutural esperada.'},{label:'Transformação Gradual (0,2 ≤ Rd ≤ 0,5)',texto:'Monitore compactação e drenagem em uso prolongado.'},{label:'Alta Transformação (Rd > 0,5)',texto:'Risco de compactação progressiva e redução da aeração radicular.'}],note:'Q3 (absorvente orgânico) decompõe mais rápido. Q4 (drenante orgânico) mais lentamente.'},
+    diagrama:{color:'#e8c96a',bg:'rgba(232,201,106,.12)',tag:'Diagrama Estrutural',title:'Como ler e usar o diagrama',body:['O Diagrama Estrutural mostra para onde cada componente "puxa" a mistura. Experimente alterar a granulometria — isso pode mudar drasticamente o comportamento para uma mesma fórmula.'],variacoes:[{label:'★ B* — Tendência Final (amarelo)',texto:'Ponto mais importante. Representa a tendência real considerando composição, granulometria e degradabilidade.'},{label:'▲ Bs — Triângulo roxo',texto:'Baricentro de composição pura — reflete apenas proporções e quadrantes.'},{label:'● B — Círculo branco',texto:'Baricentro bruto — tendência das quantidades ponderadas por percentual.'},{label:'■ Bg — Quadrado azul',texto:'Baricentro granulométrico — após aplicar a correção de granulometria.'}],note:'Arraste os pontos dos vetores no diagrama para ajustes interativos — observe B* em tempo real.'},
+    componentes:{color:'#6fcf7a',bg:'rgba(111,207,122,.12)',tag:'Entrada de Componentes',title:'Como preencher os componentes',body:['Adicione quantos componentes quiser. Se um material tem diferentes granulometrias, adicione-o como entradas separadas.'],variacoes:[{label:'Nome',texto:'Livre — use o nome preferido. Toque para editar.'},{label:'% volume',texto:'Proporção em volume. A soma deve ser 100%.'},{label:'Classe (Quadrante)',texto:'Q1 (drenante mineral), Q2 (absorvente mineral), Q3 (absorvente orgânico), Q4 (drenante orgânico).'},{label:'Granulometria (mm)',texto:'Tamanho médio da partícula. Se desconhecido, use 0,1 mm.'}],note:'Toque nos quadrantes Q1–Q4 acima para entender cada classe.'},
+    sensibilidade:{color:'#6ab4e8',bg:'rgba(106,180,232,.12)',tag:'Análise de Sensibilidade',title:'Como usar a tabela para corrigir a mistura',body:['Simula o efeito de adicionar +10% de cada componente. ΔX e ΔY mostram para onde B* se deslocaria.'],variacoes:[{label:'ΔX positivo → mais drenante',texto:'Adicionar mais deste componente aumenta aeração e reduz saturação.'},{label:'ΔX negativo → mais absorvente',texto:'Aumenta retenção hídrica.'},{label:'ΔY positivo → mais mineral',texto:'Aumenta estabilidade e reduz degradabilidade.'},{label:'ΔY negativo → mais orgânico',texto:'Favorece atividade biológica, reduz estabilidade de longo prazo.'}],note:'Componentes com maior Influência são os mais eficazes para corrigir a formulação.'},
+  };
+}
+
+function openPopup(q) {
+  const d = getPopupData()[q]; if (!d) return;
+  document.getElementById('qPopupContent').innerHTML = `
+    <div class="q-popup-tag" style="background:${d.bg};color:${d.color};border:1px solid ${d.color}44">${d.tag}</div>
+    <h2>${d.title}</h2>
+    ${d.body.map(p=>`<p>${p}</p>`).join('')}
+    <div class="pop-divider"></div>
+    <div class="pop-examples"><span style="color:var(--text-dim);font-size:9px;letter-spacing:1.5px;text-transform:uppercase">Gran. típica &nbsp;</span><span style="color:${d.color}">${d.gran}</span></div>
+    <div class="pop-examples" style="margin-top:6px"><span style="color:var(--text-dim);font-size:9px;letter-spacing:1.5px;text-transform:uppercase">Exemplos &nbsp;</span><span>${d.exemplos}</span></div>
+    <div class="pop-note">${d.note}</div>`;
+  document.getElementById('qPopupOverlay').classList.add('open');
+}
+function openInterpPopup(key) {
+  const d = getInterpPopupData()[key]; if (!d) return;
+  const vars = d.variacoes.map(v=>`<div class="pop-var" style="border-color:${d.color}44"><div class="pop-var-label" style="color:${d.color}">${v.label}</div><div class="pop-var-text">${v.texto}</div></div>`).join('');
+  document.getElementById('qPopupContent').innerHTML = `
+    <div class="q-popup-tag" style="background:${d.bg};color:${d.color};border:1px solid ${d.color}44">${d.tag}</div>
+    <h2>${d.title}</h2>
+    ${d.body.map(p=>`<p>${p}</p>`).join('')}
+    <div class="pop-divider"></div>
+    ${vars}
+    <div class="pop-note">${d.note}</div>`;
+  document.getElementById('qPopupOverlay').classList.add('open');
+}
+function closePopup() { document.getElementById('qPopupOverlay').classList.remove('open'); }
+function closePopupOutside(e) { if (e.target === document.getElementById('qPopupOverlay')) closePopup(); }
+
+function openSobrePopup() {
+  document.getElementById('sobrePopupOverlay').style.display = 'flex';
+}
+function closeSobrePopup() { document.getElementById('sobrePopupOverlay').style.display = 'none'; }
+function closeSobreOutside(e) { if (e.target === document.getElementById('sobrePopupOverlay')) closeSobrePopup(); }
+
+// ─── INIT ─────────────────────────────────────────────────────────
+renderIngredients();
+renderHistory();
+</script>
+</body>
+</html>
