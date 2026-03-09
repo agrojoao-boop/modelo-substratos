@@ -1,0 +1,1831 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Modelo Estrutural de Substratos</title><script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><style>@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap');
+:root {
+ --bg: #0c0e0c;
+ --surface: #131513;
+ --card: #181b18;
+ --border: #252a25;
+ --green: #6fcf7a;
+ --green-dim: #3d6b43;
+ --amber: #e8c96a;
+ --red: #e87a6a;
+ --blue: #6ab4e8;
+ --text: #cdd4cd;
+ --text-dim: #6a7a6a;
+ --radius: 7px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; font-size:12px; line-height:1.6; height:100vh; overflow:hidden; }
+header { border-bottom:1px solid var(--border); padding:16px 28px; display:flex; align-items:baseline; gap:16px; }
+header h1 { font-family:'Fraunces',serif; font-size:19px; font-weight:300; color:#fff; }
+header span { color:var(--text-dim); font-size:10px; letter-spacing:2px; text-transform:uppercase; }
+.lang-btn {
+ background:none; border:1px solid var(--border); border-radius:5px;
+ font-size:16px; cursor:pointer; padding:3px 7px; line-height:1;
+ transition:border-color .15s, background .15s; opacity:.5;
+}
+.lang-btn:hover { opacity:.85; border-color:var(--green-dim); }
+.lang-btn.active { opacity:1; border-color:var(--green); background:rgba(111,207,122,.08); }
+.layout { display:grid; grid-template-columns:320px 1fr; height:calc(100vh - 53px); }
+.sidebar { border-right:1px solid var(--border); display:flex; flex-direction:column; overflow-y:auto; height:calc(100vh - 53px); position:sticky; top:0; }
+.sidebar-section { padding:18px 18px 14px; border-bottom:1px solid var(--border); }
+.section-label { font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:9px; }
+.col-headers { display:grid; grid-template-columns:44px minmax(0,1fr) 44px 38px 18px; gap:5px; padding:0 8px; margin-bottom:4px; }
+.col-header { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); }
+.ingredient-list { display:flex; flex-direction:column; gap:5px; }
+.ingredient-row { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:7px 8px; display:grid; grid-template-columns:44px minmax(0,1fr) 44px 38px 18px; gap:5px; align-items:center; transition:border-color .15s; }
+.ingredient-row:hover { border-color:var(--green-dim); }
+.ingredient-row input, .ingredient-row select { background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:2px 3px; outline:none; width:100%; transition:border-color .15s; }
+.ingredient-row input:focus, .ingredient-row select:focus { border-bottom-color:var(--green); }
+.ingredient-row input[type="number"] { text-align:right; }
+.ingredient-row input.pct-input { width:44px !important; border-bottom:1px solid var(--border) !important; }
+select option { background:#181b18; }
+.btn-remove { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; line-height:1; padding:1px; transition:color .15s; }
+.btn-remove:hover { color:var(--red); }
+.btn-add { background:none; border:1px dashed var(--border); border-radius:var(--radius); color:var(--text-dim); cursor:pointer; font-family:'DM Mono',monospace; font-size:11px; padding:6px; width:100%; transition:all .15s; letter-spacing:1px; margin-top:6px; }
+.btn-add:hover { border-color:var(--green); color:var(--green); }
+.total-row { display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); margin-top:8px; }
+.total-ok { color:var(--green); }
+.total-warn { color:var(--red); }
+.btn-calc { display:block; background:var(--green); border:none; border-radius:var(--radius); color:#0a1a0c; cursor:pointer; font-family:'DM Mono',monospace; font-size:11px; font-weight:500; letter-spacing:2px; text-transform:uppercase; padding:11px; width:calc(100% - 36px); margin:12px 18px 0; transition:all .15s; }
+.btn-calc:hover { background:#8de898; }
+.pct-scrubber { position:relative; width:44px; }
+.pct-scrubber-track { position:absolute; bottom:0; left:0; height:2px; background:var(--green-dim); border-radius:1px; transition:width .05s; pointer-events:none; }
+.pct-scrubber-val { font-family:'DM Mono',monospace; font-size:11px; color:var(--text); text-align:right; padding:2px 0; width:100%; background:transparent; border:none; border-bottom:1px solid var(--border); outline:none; cursor:text; }
+.pct-scrubber-val:hover { border-bottom-color:var(--green-dim); }
+.pct-scrubber-val:focus { color:var(--green); border-bottom-color:var(--green); }
+.btn-pdf { display:block; background:transparent; border:1px solid var(--green-dim); border-radius:var(--radius); color:var(--green); cursor:pointer; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; padding:9px; width:calc(100% - 36px); margin:6px 18px 12px; transition:all .15s; }
+.btn-pdf:hover { background:var(--green-dim); color:#fff; }
+.history-section { padding:0 18px 14px; }
+.history-section-label { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
+.history-empty { font-size:10px; color:var(--text-dim); padding:8px 0; text-align:center; letter-spacing:.5px; }
+.history-item {
+ display:flex; align-items:center; gap:8px;
+ padding:7px 10px; margin-bottom:4px;
+ background:var(--surface); border:1px solid var(--border);
+ border-radius:var(--radius); cursor:pointer;
+ transition:border-color .15s, background .15s;
+}
+.history-item:hover { border-color:var(--green-dim); background:#161a16; }
+.history-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.history-info { flex:1; min-width:0; }
+.history-name { font-size:10px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.history-meta { font-size:9px; color:var(--text-dim); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.history-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.history-restore { font-size:9px; color:var(--green-dim); letter-spacing:.5px; }
+.history-item:hover .history-restore { color:var(--green); }
+.history-del { font-size:11px; color:var(--text-dim); line-height:1; opacity:0; transition:opacity .15s; padding:0 2px; }
+.history-item:hover .history-del { opacity:.6; }
+.history-del:hover { opacity:1 !important; color:#e87a6a !important; }
+.ing-name-wrap { position:relative; width:100%; }
+.ing-name-display { cursor:text; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); font-size:9px; padding:2px 3px; border-bottom:1px solid transparent; transition:border-color .15s; width:100%; }
+.ing-name-display:hover { border-bottom-color:var(--green-dim); }
+.ing-name-input { position:absolute; top:0; left:0; width:100%; background:var(--card); border:none; border-bottom:1px solid var(--green); color:var(--text); font-family:'DM Mono',monospace; font-size:9px; padding:2px 3px; outline:none; z-index:10; }
+.pdf-header { display:none; background:#fff; color:#111; padding:16px 24px 12px; border-bottom:2px solid #1a5c2e; }
+.pdf-header-top { display:flex; justify-content:space-between; align-items:flex-start; }
+.pdf-header-name { font-size:15px; font-weight:700; color:#1a3d2b; }
+.pdf-header-site { font-size:11px; color:#1a5c2e; font-weight:600; margin-top:2px; }
+.pdf-header-details { font-size:10px; color:#444; margin-top:8px; display:flex; gap:24px; flex-wrap:wrap; }
+.pdf-header-right { text-align:right; font-size:10px; color:#555; }
+@page { size:A4 landscape; margin:12mm 14mm; }
+.pdf-only { display: none; }
+@media print {
+ @page { size: A4 portrait; margin: 12mm 14mm 14mm 14mm; }
+ * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+ .sidebar, .btn-calc, .btn-pdf, header, .empty-state,
+ .pdf-parecer, .pdf-interp, .pdf-influence,
+ .results-grid, #summaryCards,
+ .chart-sub { display: none !important; }
+ body { background: #fff !important; color: #111 !important;
+ font-family: 'DM Mono', monospace; font-size: 9pt; }
+ .main { margin: 0 !important; padding: 0 !important; }
+ .layout { display: block !important; }
+ #resultsArea { display: block !important; padding: 0 !important; }
+ #pdfCabecalho {
+ display: block !important;
+ background: #1a3d2b !important;
+ color: #fff !important;
+ padding: 10px 14px 8px 14px;
+ margin-bottom: 10px;
+ border-radius: 4px;
+ }
+ #pdfCabecalho .cab-title {
+ font-size: 15pt; font-weight: 300; font-family: 'Fraunces', serif; color: #fff; letter-spacing: -.3px;
+ }
+ #pdfCabecalho .cab-sub {
+ font-size: 8pt; color: #9fcfac; margin-top: 2px; font-family: 'DM Mono', monospace; letter-spacing: 1.5px; text-transform: uppercase;
+ }
+ #pdfCabecalho .cab-info {
+ font-size: 7.5pt; color: #cde8d4; margin-top: 6px;
+ display: flex; justify-content: space-between; align-items: flex-end;
+ }
+ #pdfCabecalho .cab-right { text-align: right; }
+ .interp-card { background: #f5f5f5 !important; border: 1px solid #ccc !important;
+ border-radius: 4px; padding: 10px 12px; margin-bottom: 8px; }
+ .interp-card h3 { font-size: 9pt; color: #1a3d2b !important; margin-bottom: 6px; }
+ .interp-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px; }
+ .interp-item { background: #fff !important; border: 1px solid #ddd !important;
+ border-radius: 3px; padding: 7px 9px; }
+ .ilabel { font-size: 7pt; color: #666 !important; text-transform: uppercase;
+ letter-spacing: .5px; margin-bottom: 3px; }
+ .ivalue { font-size: 9.5pt !important; color: #111 !important; font-weight: 600; }
+ .results-grid { display: grid !important; grid-template-columns: repeat(3,1fr) !important;
+ gap: 6px; margin-bottom: 8px; }
+ .result-card { background: #f9f9f9 !important; border: 1px solid #ddd !important;
+ border-radius: 3px; padding: 6px 8px; }
+ .result-card .rc-label { font-size: 7pt; color: #888 !important; }
+ .result-card .rc-value { font-size: 10pt; font-weight: 700; color: #1a3d2b !important; }
+ .result-card .rc-sub { font-size: 7pt; color: #666 !important; }
+ .charts-row { display: grid !important; grid-template-columns: 1fr 1fr !important;
+ gap: 10px; margin-bottom: 8px; break-inside: avoid; }
+ .chart-card { background: #f9f9f9 !important; border: 1px solid #ddd !important;
+ border-radius: 3px; padding: 8px; break-inside: avoid; }
+ .chart-card h3 { font-size: 8.5pt; color: #1a3d2b !important; margin-bottom: 4px; }
+ .chart-wrap { height: 180px !important; }
+ .chart-wrap canvas { max-width: 100% !important; max-height: 100% !important; }
+ .section-label { font-size: 8pt; font-weight: 700; color: #1a3d2b !important;
+ text-transform: uppercase; letter-spacing: 1px;
+ border-bottom: 1.5px solid #1a3d2b; padding-bottom: 3px;
+ margin: 10px 0 6px 0; }
+ .index-list table, .sens-table table, .calc-table table {
+ width: 100% !important; border-collapse: collapse !important;
+ font-size: 8.5pt !important;
+ }
+ .index-list th, .sens-table th, .calc-table th {
+ background: #1a3d2b !important; color: #9fcfac !important;
+ font-size: 7.5pt; padding: 4px 5px; text-align: left;
+ }
+ .index-list td, .sens-table td, .calc-table td {
+ padding: 3.5px 5px; border-bottom: .5px solid #e0e0e0;
+ color: #111 !important; background: #fff !important;
+ }
+ .index-list tr:nth-child(even) td,
+ .sens-table tr:nth-child(even) td,
+ .calc-table tr:nth-child(even) td { background: #f7f7f7 !important; }
+ .qtag { border-radius: 2px; padding: 1px 4px; font-size: 7pt; font-weight: 700; }
+ .bar-bg { background: #e8e8e8 !important; height: 5px !important; border-radius: 2px; display:inline-block; vertical-align:middle; }
+ .bar-fill { height: 100% !important; border-radius: 2px; }
+ .pdf-only {
+ display: block !important;
+ margin-bottom: 8px;
+ }
+ .calc-table { background: #fff !important; border: 1px solid #ccc !important; border-radius: 3px; overflow: hidden; }
+ .calc-table table { width: 100% !important; border-collapse: collapse !important; font-size: 8.5pt !important; }
+ .calc-table th { background: #1a3d2b !important; color: #9fcfac !important; font-size: 7.5pt; padding: 4px 6px; text-align: left; }
+ .calc-table td { padding: 3.5px 6px; border-bottom: .5px solid #e0e0e0; color: #111 !important; background: #fff !important; }
+ .calc-table tr:nth-child(even) td { background: #f7f7f7 !important; }
+ #pdfAviso {
+ display: block !important;
+ margin-top: 14px;
+ border-top: 1px solid #ccc;
+ padding-top: 8px;
+ font-size: 7pt;
+ color: #888 !important;
+ line-height: 1.5;
+ }
+ .charts-row { page-break-inside: avoid; }
+ .interp-card { page-break-inside: avoid; }
+ .chart-legend { display: flex !important; flex-wrap: wrap !important; gap: 4px 10px !important; margin-top: 6px !important; padding-top: 6px !important; border-top: 1px solid #ccc !important; }
+ .chart-legend-item { font-size: 7pt !important; color: #111 !important; display: flex !important; align-items: center !important; gap: 4px !important; }
+ .legend-dot { width: 8px !important; height: 8px !important; border-radius: 50% !important; flex-shrink: 0; }
+ .legend-line { width: 16px !important; height: 2px !important; flex-shrink: 0; }
+ /* Ocultar Índices Calculados no PDF */
+ #calcSection { display: none !important; }
+ /* Forçar Análise de Sensibilidade aberta no PDF */
+ #sensTableWrap { display: block !important; max-height: none !important; opacity: 1 !important; padding: 8px !important; }
+ #sensTableWrap .sens-table { display: block !important; }
+ .collapsible-header { display: block !important; }
+ #chevronSens, #chevronInterp, #chevronCalc { display: none !important; }
+ .q-info-btn { display: none !important; }
+}
+.info-panel { padding:14px 18px; border-bottom:1px solid var(--border); }
+.quadrant-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px; margin-top:7px; }
+.q-cell { border-radius:5px; padding:6px 9px; font-size:10px; line-height:1; display:flex; align-items:center; justify-content:space-between; min-height:28px; background:transparent; border:none; cursor:pointer; transition:background .15s; }
+.q-cell:hover { background:rgba(255,255,255,.04); }
+.q-cell strong { display:block; font-size:10px; margin-bottom:0; font-weight:500; letter-spacing:.2px; }
+.q1c {} .q2c {} .q3c {} .q4c {}
+.index-list { display:flex; flex-direction:column; gap:5px; }
+.index-row { display:flex; gap:8px; align-items:flex-start; padding:7px 10px; background:var(--surface); border-radius:5px; border-left:3px solid; font-size:11px; }
+.idx-name { color:var(--text-dim); font-size:9px; }
+.idx-val { font-size:14px; font-family:'Fraunces',serif; color:#fff; }
+.idx-desc { color:var(--text-dim); font-size:9px; margin-top:1px; }
+.bar-bg { background:var(--surface); border-radius:3px; height:5px; overflow:hidden; display:inline-block; vertical-align:middle; }
+.bar-fill { height:100%; border-radius:3px; transition:width .3s; }
+.main { padding:22px 26px; display:flex; flex-direction:column; gap:20px; overflow-y:auto; }
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 40px; color:var(--text-dim); gap:10px; text-align:center; }
+.empty-state .icon { font-size:40px; opacity:.3; }
+.hidden { display:none; }
+.results-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+.result-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; }
+.result-card .rlabel { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:5px; }
+.result-card .rcoords { font-family:'Fraunces',serif; font-size:16px; color:#fff; }
+.result-card .rsub { font-size:9px; color:var(--text-dim); margin-top:3px; line-height:1.4; }
+.qtag { display:inline-block; padding:2px 7px; border-radius:4px; font-size:9px; margin-top:5px; letter-spacing:1px; text-transform:uppercase; }
+.charts-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.chart-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px 18px 14px; }
+.chart-card h3 { font-family:'Fraunces',serif; font-weight:300; font-size:13px; color:var(--text); margin-bottom:3px; }
+.chart-sub { font-size:10px; color:var(--text-dim); margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+.chart-wrap { position:relative; height:540px; }
+.chart-wrap canvas { position:absolute; top:0; left:0; width:100%!important; height:100%!important; }
+.chart-legend { margin-top:12px; display:flex; flex-wrap:wrap; gap:5px 12px; border-top:1px solid var(--border); padding-top:10px; }
+.legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-dim); }
+.legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.legend-line { width:14px; height:2px; flex-shrink:0; }
+.calc-table { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.calc-table table { width:100%; border-collapse:collapse; }
+.calc-table th { background:var(--surface); color:var(--text-dim); font-size:9px; letter-spacing:1.5px; text-transform:uppercase; padding:8px 11px; text-align:left; border-bottom:1px solid var(--border); }
+.calc-table td { padding:8px 11px; border-bottom:1px solid var(--border); font-size:11px; }
+.calc-table tr:last-child td { border-bottom:none; }
+.interp-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:0; }
+.interp-card h3 { font-family:'Fraunces',serif; font-weight:300; font-size:13px; color:var(--text); margin-bottom:12px; }
+.interp-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.interp-item { padding:9px 11px; background:var(--surface); border-radius:6px; border-left:3px solid; }
+.interp-item .ilabel { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:3px; }
+.interp-item .ivalue { color:var(--text); font-size:11px; }
+.sens-table { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.sens-table table { width:100%; border-collapse:collapse; }
+.sens-table th { background:var(--surface); color:var(--text-dim); font-size:9px; letter-spacing:1.5px; text-transform:uppercase; padding:8px 11px; text-align:left; border-bottom:1px solid var(--border); }
+.sens-table td { padding:8px 11px; border-bottom:1px solid var(--border); font-size:11px; }
+.sens-table tr:last-child td { border-bottom:none; }
+.calc-table.index-list, .index-list { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; padding:4px 0; }
+.collapsible-header {
+ display:flex; align-items:center; justify-content:space-between;
+ cursor:pointer; user-select:none;
+ background:var(--card); border:1px solid var(--border);
+ border-radius:var(--radius); padding:11px 16px;
+ transition:border-color .15s, background .15s;
+}
+.collapsible-header:hover { border-color:var(--green-dim); background:#161a16; }
+.collapsible-header.open { border-color:var(--green-dim); border-bottom-left-radius:0; border-bottom-right-radius:0; border-bottom-color:transparent; }
+.collapsible-header .section-label { margin-bottom:0; font-size:10px; letter-spacing:2px; color:var(--text); }
+.collapsible-chevron {
+ font-size:11px; color:var(--text-dim); transition:transform .2s; flex-shrink:0;
+}
+.collapsible-chevron.open { transform:rotate(180deg); color:var(--green); }
+.collapsible-body {
+ overflow:hidden; transition:max-height .28s ease, opacity .2s ease;
+ max-height:0; opacity:0;
+ background:var(--card); border:1px solid var(--green-dim);
+ border-top:none; border-radius:0 0 var(--radius) var(--radius);
+ padding:0 1px;
+}
+.collapsible-body.open { max-height:2000px; opacity:1; padding:8px; }
+.index-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:6px 0 2px; }
+.index-grid .index-row { margin:0; }
+.pdf-parecer { display:none !important; }
+.parecer-header { display:flex; align-items:baseline; gap:12px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+.parecer-title { font-family:'Fraunces',serif; font-size:14px; color:var(--text); }
+.parecer-sub { font-size:10px; color:var(--text-dim); font-style:italic; }
+.parecer-body { position:relative; }
+.pdf-parecer textarea { width:100%; box-sizing:border-box; min-height:120px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text); font-family:'DM Mono',monospace; font-size:12px; line-height:2.0; padding:10px 12px; resize:vertical; outline:none; transition:border-color .15s; }
+.pdf-parecer textarea:focus { border-color:var(--green); background:#0d170d; }
+.parecer-hint { font-size:9px; color:var(--text-dim); margin-top:5px; text-align:right; letter-spacing:.5px; }
+.parecer-footer { display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid var(--border); font-size:10px; color:var(--text-dim); }
+.parecer-date { font-size:9px; color:var(--text-dim); }
+.q-cell { cursor:pointer; position:relative; transition:opacity .15s; }
+.q-cell:hover { opacity:.85; }
+.q-info-btn {
+ position:absolute; top:5px; right:7px;
+ width:14px; height:14px; border-radius:50%;
+ background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.13);
+ color:rgba(255,255,255,.35); font-size:9px; line-height:14px; text-align:center;
+ cursor:pointer; font-family:'DM Mono',monospace; font-weight:500;
+ transition:all .15s; user-select:none; flex-shrink:0;
+}
+.q-cell:hover .q-info-btn { color:rgba(255,255,255,.7); background:rgba(255,255,255,.12); }
+.q-popup-overlay {
+ display:none; position:fixed; inset:0; z-index:9999;
+ background:rgba(0,0,0,.55); backdrop-filter:blur(3px);
+ align-items:center; justify-content:center;
+}
+.q-popup-overlay.open { display:flex; }
+.q-popup {
+ background:#151915; border:1px solid var(--border);
+ border-radius:10px; padding:26px 28px 22px;
+ max-width:480px; width:calc(100% - 40px);
+ max-height:90vh; overflow-y:auto;
+ box-shadow:0 24px 60px rgba(0,0,0,.7);
+ position:relative; animation:popIn .18s ease;
+}
+@keyframes popIn {
+ from { opacity:0; transform:scale(.96) translateY(6px); }
+ to { opacity:1; transform:scale(1) translateY(0); }
+}
+.q-popup-tag {
+ display:inline-block; font-size:9px; letter-spacing:2px;
+ text-transform:uppercase; padding:3px 9px; border-radius:20px;
+ font-family:'DM Mono',monospace; margin-bottom:10px; font-weight:500;
+}
+.q-popup h2 {
+ font-family:'Fraunces',serif; font-weight:300; font-size:18px;
+ color:#fff; margin-bottom:14px; line-height:1.3;
+}
+.q-popup p {
+ font-size:11.5px; line-height:1.75; color:var(--text);
+ font-family:'DM Mono',monospace; margin-bottom:10px;
+}
+.q-popup p:last-of-type { margin-bottom:0; }
+.q-popup .pop-divider {
+ height:1px; background:var(--border); margin:12px 0;
+}
+.q-popup .pop-examples {
+ font-size:10px; color:var(--text-dim); line-height:1.6;
+}
+.q-popup .pop-examples span { color:var(--text); }
+.q-popup-close {
+ position:absolute; top:14px; right:16px;
+ background:none; border:none; color:var(--text-dim);
+ font-size:18px; cursor:pointer; line-height:1;
+ transition:color .15s; padding:2px 4px;
+}
+.q-popup-close:hover { color:#fff; }
+.q-popup .pop-note {
+ margin-top:12px; padding:9px 12px;
+ background:rgba(255,255,255,.03); border-radius:6px;
+ border-left:3px solid var(--border);
+ font-size:10px; color:var(--text-dim); line-height:1.65;
+}
+@media print { .q-popup-overlay { display:none !important; } }
+.name-label {
+ font-family:'DM Mono',monospace; font-size:11px; color:var(--text);
+ padding:2px 3px; border-bottom:1px solid var(--border);
+ cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+ transition:border-color .15s; width:100%; max-width:100%; display:block;
+}
+.name-label:hover { border-bottom-color:var(--green-dim); color:#fff; }
+.name-edit-box {
+ position:absolute; top:-2px; left:0; z-index:200;
+ background:#1a1f1a; border:1px solid var(--green);
+ border-radius:6px; padding:5px 8px;
+ box-shadow:0 8px 24px rgba(0,0,0,.6);
+ width:200px;
+}
+.name-edit-input {
+ background:transparent; border:none; border-bottom:1px solid var(--green-dim);
+ color:var(--text); font-family:'DM Mono',monospace; font-size:11px;
+ padding:2px 3px; outline:none; width:100%;
+}
+.name-edit-input:focus { border-bottom-color:var(--green); color:var(--green); }</style></head><body><header><h1 id="hTitle">Modelo Estrutural de Substratos</h1><span id="hSub">Componentes · Granulometria · Degradabilidade</span><div style="margin-left:auto;display:flex;gap:6px;align-items:center"><button onclick="openSobrePopup()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;padding:4px 10px;border-radius:4px;cursor:pointer;transition:border-color .2s,color .2s" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">sobre o modelo</button></div></header><div class="pdf-header" id="pdfHeader"><div class="pdf-header-top"><div><div class="pdf-header-name">João Giovanni</div><div class="pdf-header-site">Engenheiro Agrônomo · Entusiasta da arte do bonsai</div><div style="font-size:10px;color:#444;margin-top:3px">Especialista em plantas ornamentais e estresse vegetal</div><div style="font-size:9.5px;color:#666;margin-top:1px">Escola Superior de Agricultura Luiz de Queiroz (ESALQ) — Universidade de São Paulo (USP) — Brasil</div><div class="pdf-header-details" style="margin-top:6px"><span>CREA-SP: 507-1573593</span><span>Instagram: @joao.giovanni90</span><span>Whatsapp: (19) 99758-3777</span><span>www.cultivoornamental.com.br</span></div></div><div class="pdf-header-right"><div style="font-size:13px;font-weight:700;color:#1a3d2b">Modelo Estrutural de Substratos</div><div id="pdfDate" style="margin-top:4px"></div></div></div></div><div class="layout"><!-- SIDEBAR --><div class="sidebar"><div class="info-panel"><div class="section-label" id="classesLabelEl">Classes Estruturais <span id="classesHintEl" style="font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;font-weight:300">— clique para detalhes</span></div><div class="quadrant-grid"><div class="q-cell q2c" onclick="openPopup('Q2')"><strong id="qLabel2" style="color:#6ab4e8">Q2 — Absorvente Mineral</strong><span class="q-info-btn">?</span></div><div class="q-cell q1c" onclick="openPopup('Q1')"><strong id="qLabel1" style="color:#6fcf7a">Q1 — Drenante Mineral</strong><span class="q-info-btn">?</span></div><div class="q-cell q3c" onclick="openPopup('Q3')"><strong id="qLabel3" style="color:#e87a6a">Q3 — Absorvente Orgânico</strong><span class="q-info-btn">?</span></div><div class="q-cell q4c" onclick="openPopup('Q4')"><strong id="qLabel4" style="color:#e8c96a">Q4 — Drenante Orgânico</strong><span class="q-info-btn">?</span></div></div></div><div class="sidebar-section"><div class="section-label" style="display:flex;align-items:center;justify-content:space-between"><span id="compLabelEl">Componentes</span><span class="q-info-btn" onclick="openInterpPopup('componentes')" style="position:static;flex-shrink:0">?</span></div><div class="col-headers"><span class="col-header">%</span><span class="col-header" id="colNameEl">Componente</span><span class="col-header" id="colClassEl">Classe</span><span class="col-header" id="colGranEl">Gran.mm</span><span></span></div><div class="ingredient-list" id="ingredientList"></div><button class="btn-add" id="btnAdd">+ adicionar componente</button><div class="total-row"><span style="color:var(--text-dim)" id="totalLabelEl">Total</span><span id="totalDisplay" class="total-warn">0%</span></div></div><div class="info-panel" id="sidebarCompo" style="display:none"><div class="section-label" id="compoLabelEl">Composição por Quadrante</div><div id="compoList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div></div><button class="btn-calc" id="btnCalc">▶ calcular modelo</button><button class="btn-pdf" id="btnPdf">⎙ salvar como PDF</button><div class="history-section"><div class="history-section-label" style="display:flex;align-items:center;justify-content:space-between"><span id="histLabelEl">Histórico — últimos 5 cálculos</span><button onclick="historyClear()" id="btnHistClear" style="background:none;border:none;color:var(--text-dim);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.5px;cursor:pointer;padding:0;transition:color .15s;display:none" onmouseover="this.style.color='#e87a6a'" onmouseout="this.style.color='var(--text-dim)'">limpar tudo</button></div><div id="historyList"><div class="history-empty">nenhum cálculo ainda</div></div></div></div><!-- MAIN --><div class="main"><div class="empty-state" id="emptyState"><div class="icon">⬡</div><div style="font-size:14px" id="emptyTitleEl">Insira componentes e calcule</div><div style="font-size:10px" id="emptySubEl">Os gráficos e análises aparecerão aqui</div></div><div id="resultsArea" class="hidden"><div id="pdfCabecalho" style="display:none"><div class="cab-title">Modelo Estrutural de Substratos</div><div class="cab-sub">Componentes &middot; Granulometria &middot; Degradabilidade</div><div class="cab-info"><div><strong>João Giovanni</strong><br>Engenheiro Agrônomo · Entusiasta da arte do bonsai<br>Especialista em plantas ornamentais e estresse vegetal<br>ESALQ — Universidade de São Paulo (USP) — Brasil<br>CREA-SP: 507-1573593</div><div class="cab-right">www.cultivoornamental.com.br<br>@joao.giovanni90 &nbsp;|&nbsp; (19) 99758-3777</div></div></div><div><div class="collapsible-header" onclick="toggleSection('interpCardWrap','chevronInterp')"><span class="section-label" style="margin:0" id="labelInterp">Interpretação Estrutural</span><span class="collapsible-chevron" id="chevronInterp">▾</span></div><div class="collapsible-body" id="interpCardWrap"><div class="interp-card" id="interpCard" style="border:none;border-radius:0;background:transparent;padding:8px 4px"></div></div></div><div class="pdf-parecer" id="pdfParecer"><div class="parecer-header"><span class="parecer-title">Parecer Agronômico</span><span class="parecer-sub">Observações técnicas · campo editável no PDF gerado</span></div><div class="parecer-body"><textarea id="parecerText" placeholder="Escreva observações iniciais aqui (opcional) — o PDF gerado terá um campo editável nessa área..." spellcheck="true"></textarea><div class="parecer-hint">O PDF gerado terá este espaço como campo editável</div></div></div><div class="results-grid" id="summaryCards"></div><div class="charts-row"><div class="chart-card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px"><h3 style="margin:0" id="diagTitleEl">Diagrama Estrutural</h3><span class="q-info-btn" onclick="openInterpPopup('diagrama')" style="position:static;flex-shrink:0">?</span></div><div class="chart-sub" id="diagSubEl">Vetores dos ingredientes · B → Bg → B*</div><div class="chart-wrap"><canvas id="chart1"></canvas></div><div class="chart-legend" id="legend1"></div></div><div class="chart-card"><h3 id="sensTitleEl">Campo de Sensibilidade (+10%)</h3><div class="chart-sub" id="sensSubEl">Deslocamento de B* ao aumentar cada componente · <span style="color:var(--green-dim)">clique na seta para aplicar +10%</span></div><div class="chart-wrap"><canvas id="chart2"></canvas></div><div class="chart-legend" id="legend2"></div></div></div><div id="calcSection"><div class="collapsible-header" onclick="toggleSection('calcTableWrap','chevronCalc')"><span class="section-label" style="margin:0" id="labelIdxCalc">Índices Calculados</span><span class="collapsible-chevron" id="chevronCalc">▾</span></div><div class="collapsible-body" id="calcTableWrap"><div class="index-grid" id="calcTable"></div></div></div><div class="pdf-only" id="pdfCompoBlock"><div class="section-label" id="compDetailLabelEl">Composição Detalhada</div><div class="calc-table" id="calcTableCompo"></div></div><div><div class="collapsible-header" onclick="toggleSection('sensTableWrap','chevronSens')"><span class="section-label" style="margin:0" id="labelSens">Análise de Sensibilidade</span><div style="display:flex;align-items:center;gap:8px"><span class="q-info-btn" onclick="event.stopPropagation();openInterpPopup('sensibilidade')" style="position:static;flex-shrink:0">?</span><span class="collapsible-chevron" id="chevronSens">▾</span></div></div><div class="collapsible-body" id="sensTableWrap"><div class="sens-table" id="sensTable" style="margin-top:6px"></div></div></div><div class="pdf-interp" id="pdfInterpBlock" style="display:none"></div><div class="pdf-influence" id="pdfInfluenceBlock" style="display:none"></div><div id="pdfAviso" style="display:none">
+Este modelo foi desenvolvido e disponibilizado gratuitamente pelo Eng. Agrônomo João Giovanni (CREA-SP: 507-1573593)
+como ferramenta de apoio técnico para formulação e análise de substratos.
+O autor não se responsabiliza pela reprodução, adaptação ou uso por terceiros sem autorização expressa.
+Os resultados são de natureza orientativa e não substituem o diagnóstico técnico presencial.
+Contato: www.cultivoornamental.com.br &nbsp;|&nbsp; @joao.giovanni90 &nbsp;|&nbsp; (19) 99758-3777
+</div></div></div></div><script>let ingredients = [
+  {pct:25, name:'A', q:'Q1', gran:2},
+  {pct:25, name:'B', q:'Q2', gran:3},
+  {pct:25, name:'C', q:'Q3', gran:0.1},
+  {pct:25, name:'D', q:'Q4', gran:2},
+];
+const QCOLORS={Q1:'#6fcf7a',Q2:'#6ab4e8',Q3:'#e87a6a',Q4:'#e8c96a'};
+const QBG    ={Q1:'#0f2018',Q2:'#0f1820',Q3:'#200f0f',Q4:'#201a0f'};
+const QBORD  ={Q1:'#1e4030',Q2:'#1e3040',Q3:'#401e1e',Q4:'#40301e'};
+function renderIngredients(){
+  const list=document.getElementById('ingredientList');
+  list.innerHTML='';
+  ingredients.forEach((ing,i)=>{
+    const row=document.createElement('div');
+    row.className='ingredient-row';
+    const pctIn=document.createElement('input');
+    pctIn.type='number'; pctIn.min=0; pctIn.max=100; pctIn.step=1;
+    pctIn.value=ing.pct;
+    pctIn.className='pct-input';
+    pctIn.style.cssText='background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-family:DM Mono,monospace;font-size:11px;padding:2px 3px;outline:none;width:42px;text-align:right;transition:border-color .15s,color .15s;-moz-appearance:textfield;appearance:textfield;';
+    pctIn.addEventListener('focus',()=>{pctIn.select();pctIn.style.borderBottomColor='var(--green)';pctIn.style.color='var(--green)';});
+    pctIn.addEventListener('blur',()=>{pctIn.style.borderBottomColor='var(--border)';pctIn.style.color='var(--text)';});
+    pctIn.addEventListener('input',()=>{
+      const v=Math.max(0,parseFloat(pctIn.value)||0);
+      ingredients[i].pct=v;
+      updateTotal();
+      if(!document.getElementById('resultsArea').classList.contains('hidden')) liveRecalcDebounced();
+    });
+    pctIn.addEventListener('change',()=>{
+      const v=Math.max(0,parseFloat(pctIn.value)||0);
+      ingredients[i].pct=v;
+      pctIn.value=v;
+      updateTotal();
+    });
+    const nameWrap=document.createElement('div');
+    nameWrap.style.cssText='position:relative;width:100%;min-width:0;overflow:hidden;';
+    const nameLabel=document.createElement('div');
+    nameLabel.className='name-label';
+    nameLabel.textContent=ing.name||'—';
+    nameLabel.title='Clique para editar';
+    nameWrap.appendChild(nameLabel);
+    nameLabel.addEventListener('click', ()=>{
+      document.querySelectorAll('.name-edit-box').forEach(b=>b.remove());
+      const box=document.createElement('div');
+      box.className='name-edit-box';
+      const inp=document.createElement('input');
+      inp.type='text';
+      inp.value=ingredients[i].name||'';
+      inp.placeholder='nome do componente';
+      inp.className='name-edit-input';
+      const commit=()=>{
+        const v=inp.value.trim();
+        ingredients[i].name=v;
+        nameLabel.textContent=v||'—';
+        box.remove();
+      };
+      inp.addEventListener('keydown', e=>{
+        if(e.key==='Enter'||e.key==='Escape') commit();
+      });
+      inp.addEventListener('blur', commit);
+      box.append(inp);
+      nameWrap.appendChild(box);
+      inp.focus(); inp.select();
+    });
+    const nameIn=nameWrap;
+    const sel=document.createElement('select');
+    ['Q1','Q2','Q3','Q4'].forEach(q=>{
+      const opt=document.createElement('option');
+      opt.value=q; opt.textContent=q; if(ing.q===q) opt.selected=true;
+      sel.appendChild(opt);
+    });
+    sel.style.color=QCOLORS[ing.q];
+    sel.addEventListener('change',()=>{ingredients[i].q=sel.value;sel.style.color=QCOLORS[sel.value];});
+    const granIn=document.createElement('input');
+    granIn.type='number'; granIn.min=0; granIn.step=0.1;
+    granIn.value=ing.gran!=null?ing.gran:''; granIn.placeholder='mm';
+    const updateGran=()=>{
+      const v=parseFloat(granIn.value);
+      ingredients[i].gran=(granIn.value&&!isNaN(v)&&v>0)?v:null;
+      if(!document.getElementById('resultsArea').classList.contains('hidden')) liveRecalcDebounced();
+    };
+    granIn.addEventListener('change',updateGran);
+    granIn.addEventListener('input',updateGran);
+    const btnRem=document.createElement('button');
+    btnRem.className='btn-remove'; btnRem.textContent='×';
+    btnRem.addEventListener('click',()=>removeIng(i));
+    row.append(pctIn,nameIn,sel,granIn,btnRem);
+    list.appendChild(row);
+  });
+  updateTotal();
+}
+function updateTotal(){
+  const t=ingredients.reduce((s,i)=>s+i.pct,0);
+  const el=document.getElementById('totalDisplay');
+  const diff=parseFloat((100-t).toFixed(2));
+  if(Math.abs(diff)<0.01){
+    el.textContent=t.toFixed(1)+'%';
+    el.className='total-ok';
+    el.title='';
+  } else {
+    el.textContent=t.toFixed(1)+'%';
+    el.className='total-warn';
+    el.title=`Calcular ajustará ${diff>0?'+':''}${diff}% no componente de maior %`;
+  }
+}
+function removeIng(i){ingredients.splice(i,1);renderIngredients();}
+document.getElementById('btnAdd').onclick=()=>{ingredients.push({pct:0,name:'',q:'Q1',gran:null});renderIngredients();};
+function vectorFor(q,p){return {Q1:[+p,+p],Q2:[-p,+p],Q3:[-p,-p],Q4:[+p,-p]}[q];}
+function unitPos(q){return {Q1:[+1,+1],Q2:[-1,+1],Q3:[-1,-1],Q4:[+1,-1]}[q];}
+function computeModel(ings){
+  let Rx=0,Ry=0;
+  const vecs=ings.map(ing=>{const v=vectorFor(ing.q,ing.pct);Rx+=v[0];Ry+=v[1];return v;});
+  const sumPct=ings.reduce((s,i)=>s+i.pct,0);
+  const Bx=sumPct>0?Rx/sumPct:0, By=sumPct>0?Ry/sumPct:0;
+  let sumBsx=0,sumBsy=0;
+  ings.forEach(ing=>{const p=unitPos(ing.q);sumBsx+=p[0];sumBsy+=p[1];});
+  const Bsx=ings.length>0?sumBsx/ings.length:0, Bsy=ings.length>0?sumBsy/ings.length:0;
+  const drain=ings.filter(i=>i.q==='Q1'||i.q==='Q4');
+  const absorb=ings.filter(i=>i.q==='Q2'||i.q==='Q3');
+  const sumPD=drain.reduce((s,i)=>s+i.pct,0);
+  const sumPA=absorb.reduce((s,i)=>s+i.pct,0);
+  let GD=null,GA=null,Ig=null,dXg=0,BgX=Bx,BgY=By,Icd=null,Icd4=null,G1=null,G2=null,G4=null,Gmed=null,RdEfQ4=0,contamQ4=0;
+  if(sumPD>0&&drain.every(i=>i.gran!=null)) GD=drain.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPD;
+  if(sumPA>0&&absorb.every(i=>i.gran!=null)) GA=absorb.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPA;
+  const allWithGran=ings.filter(i=>i.gran!=null);
+  const sumPAll=allWithGran.reduce((s,i)=>s+i.pct,0);
+  const q1WithGran=ings.filter(i=>i.q==='Q1'&&i.gran!=null);
+  const sumPQ1=q1WithGran.reduce((s,i)=>s+i.pct,0);
+  const q2WithGran=ings.filter(i=>i.q==='Q2'&&i.gran!=null);
+  const sumPQ2=q2WithGran.reduce((s,i)=>s+i.pct,0);
+  let limiar=null,ratio=null,kExp=null;
+  if(sumPAll>0){
+    Gmed=allWithGran.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPAll;
+    if(sumPQ2>0){
+      G2=q2WithGran.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPQ2;
+      limiar=(2/3)*G2;
+    }
+    if(sumPQ1>0){
+      G1=q1WithGran.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPQ1;
+      if(G2!=null){
+        const kGauss=12.0;
+        const valG2=0.02+0.98*(limiar/G2);
+        if(G1<=limiar){
+          const t=(limiar-G1)/limiar;
+          Icd=Math.exp(-kGauss*t*t);
+          kExp=kGauss; ratio=1-t;
+        } else if(G1<=G2){
+          const t=(G1-limiar)/(G2-limiar);
+          Icd=1-(1-valG2)*t*t;
+          kExp=2; ratio=t;
+        } else {
+          Icd=0.02+0.98*(limiar/G1);
+          kExp=1; ratio=limiar/G1;
+        }
+      } else {
+        Icd=null;
+      }
+    }
+  }
+  if(GD!=null&&GA!=null&&GD>0) Ig=GA/GD;
+  {
+    const q4WithGran=ings.filter(i=>i.q==='Q4'&&i.gran!=null);
+    const sumPQ4=q4WithGran.reduce((s,i)=>s+i.pct,0);
+    G4=sumPQ4>0?q4WithGran.reduce((s,i)=>s+i.pct*Math.max(0.1,i.gran),0)/sumPQ4:null;
+    if(G4!=null && G2!=null && limiar!=null){
+      const kG=12.0, valG2_4=0.02+0.98*(limiar/G2);
+      if(G4<=limiar){const t=(limiar-G4)/limiar; Icd4=Math.exp(-kG*t*t);}
+      else if(G4<=G2){const t=(G4-limiar)/(G2-limiar); Icd4=1-(1-valG2_4)*t*t;}
+      else {Icd4=0.02+0.98*(limiar/G4);}
+    }
+  }
+  if(G2!=null && limiar!=null){
+    const q1Pct=ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+    const sumPQ4b=ings.filter(i=>i.q==='Q4'&&i.gran!=null).reduce((s,i)=>s+i.pct,0);
+    const hasQ1 = q1Pct > 0;
+    const IcdVal  = Icd!=null  ? Icd  : 0;
+    const Icd4Val = Icd4!=null ? Icd4 : null;
+    const pesoQ1 = hasQ1 ? q1Pct : 0;
+    const Od_pct = ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+    RdEfQ4 = (Od_pct/100)*(Od_pct/100);
+    const pesoQ4 = sumPQ4b * (1 - RdEfQ4);
+    const signed1 = 2*IcdVal - 1;
+    const signed4 = Icd4Val!=null ? 2*Icd4Val - 1 : 0;
+    const pesoQ4ef = Icd4Val!=null ? pesoQ4 : 0;
+    const q4frac = (q1Pct+sumPQ4b)>0 ? sumPQ4b/(q1Pct+sumPQ4b) : 0;
+    contamQ4 = Icd4Val!=null ? q4frac*(1-Icd4Val) : 0;
+    const signed1_ef = signed1 * (1 - contamQ4);
+    const ampQ1 = (IcdVal < 0.3 && hasQ1) ? 2.0 : 1.0;
+    const dXgRaw = (pesoQ1*ampQ1*signed1_ef + pesoQ4ef*signed4) / 100.0;
+    const BgXClamped = Math.max(-1, Math.min(1, Bx + dXgRaw));
+    dXg = BgXClamped - Bx;
+    BgX = BgXClamped;
+  }
+  const Oa=ings.filter(i=>i.q==='Q3').reduce((s,i)=>s+i.pct,0);
+  const Od=ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const Id=ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const Ia=ings.filter(i=>i.q==='Q2').reduce((s,i)=>s+i.pct,0);
+  const S=Ia+Oa+Od;
+  const Stotal=ings.reduce((s,i)=>s+i.pct,0)||100;
+  const Rd=Stotal>0?(Oa>0?Oa/Stotal:Od/Stotal):0;
+  const RdEf = (Oa===0 && Od>0) ? Rd*(Od/Stotal) : Rd;
+  const dXdFator = (Oa===0 && Od>0) ? 0.3 : 1.0;
+  const dXd = -RdEf * dXdFator;
+  const dYd = -RdEf;
+  function bellIntra(G, Gref) {
+    if(!G || !Gref) return null;
+    const lim = (2/3)*Gref;
+    const valG2 = 0.02+0.98*(lim/Gref);
+    if(G<=lim){ const t=(lim-G)/lim; return Math.exp(-4.6*t*t); }
+    if(G<=Gref){ const t=(G-lim)/(Gref-lim); return 1-(1-valG2)*t*t; }
+    return 0.02+0.98*(lim/G);
+  }
+  function calcQuartis(grp){
+    function granNoPercentil(p){
+      let acc=0;
+      for(let idx=0;idx<grp.length;idx++){
+        const prev=acc; acc+=grp[idx].pct;
+        if(acc>=p){
+          if(idx===0||prev>=p) return Math.max(0.1,grp[idx].gran);
+          const frac=(p-prev)/(acc-prev);
+          return Math.max(0.1,grp[idx-1].gran)+frac*(Math.max(0.1,grp[idx].gran)-Math.max(0.1,grp[idx-1].gran));
+        }
+      }
+      return Math.max(0.1,grp[grp.length-1].gran);
+    }
+    const GA=granNoPercentil(25);
+    const GD=granNoPercentil(75);
+    if(!GA||!GD) return null;
+    const lim=(2/3)*GD, vG2=0.02+0.98*(lim/GD), G=GA;
+    let icd;
+    if(G<=lim){const t=(lim-G)/lim;icd=Math.exp(-4.6*t*t);}
+    else if(G<=GD){const t=(G-lim)/(GD-lim);icd=1-(1-vG2)*t*t;}
+    else{icd=0.02+0.98*(lim/G);}
+    return {Icd:icd,GA,GD};
+  }
+  const quadrantesPresentes=[...new Set(ings.map(i=>i.q))];
+  const hasDrain=ings.some(i=>i.q==='Q1'||i.q==='Q4');
+  const hasAbsorb=ings.some(i=>i.q==='Q2'||i.q==='Q3');
+  const isMono=quadrantesPresentes.length===1;
+  const isDrainOnly=hasDrain&&!hasAbsorb;
+  const isAbsorbOnly=hasAbsorb&&!hasDrain;
+  const intraQ={};
+  let intraIcd=null, intraGA=null, intraGD=null, intraGrupo=null;
+  if(isMono||isDrainOnly||isAbsorbOnly){
+    const grp=ings.filter(i=>i.gran!=null&&!isNaN(i.gran)&&i.gran>0&&i.pct>0)
+                  .sort((a,b)=>a.gran-b.gran);
+    if(grp.length>=2){
+      const res=calcQuartis(grp);
+      if(res){
+        intraIcd=res.Icd; intraGA=res.GA; intraGD=res.GD;
+        intraGrupo=isMono?quadrantesPresentes[0]:(isDrainOnly?'Q1+Q4':'Q2+Q3');
+        intraQ[intraGrupo]={Icd:intraIcd,GA:intraGA,GD:intraGD,n:grp.length};
+        if(isMono){
+          const signed=2*intraIcd-1;
+          const totalPct=grp.reduce((s,i)=>s+i.pct,0);
+          dXg=(totalPct*signed)/100;
+          BgX=Math.max(-1,Math.min(1,Bx+dXg));
+        }
+      }
+    }
+  }
+  const BfXraw=BgX+dXd, BfYraw=BgY+dYd;
+  const BfX=Math.max(-1,Math.min(1,BfXraw)), BfY=Math.max(-1,Math.min(1,BfYraw));
+  return {vecs,Rx,Ry,Bx,By,Bsx,Bsy,sumPct,GD,GA,Ig,Icd,Icd4,G1,G2,G4,Gmed,limiar,ratio,kExp,dXg,BgX,BgY,Oa,Od,Id,Ia,S,Rd,RdEf,dXd,dYd,BfX,BfY,intraQ,RdEfQ4,contamQ4};
+}
+function quadrantOf(x,y){if(x>=0&&y>=0)return'Q1';if(x<0&&y>=0)return'Q2';if(x<0&&y<0)return'Q3';return'Q4';}
+function quadrantLabel(q){
+  return {Q1:'Drenante Mineral',Q2:'Absorvente Mineral',Q3:'Absorvente Orgânico',Q4:'Drenante Orgânico'}[q];
+}
+function chartBounds(pts){
+  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+  const absMax=Math.max(Math.abs(Math.min(...xs)),Math.abs(Math.max(...xs)),
+                        Math.abs(Math.min(...ys)),Math.abs(Math.max(...ys)),0.4);
+  const n=Math.ceil((absMax+0.2)*10)/10;
+  return {min:-n,max:n};
+}
+function makeQuadrantPlugin(id){
+  return {
+    id,
+    beforeDraw(chart){
+      const {ctx:c,chartArea:ca,scales:sc}=chart;
+      const x0=sc.x.getPixelForValue(0),y0=sc.y.getPixelForValue(0);
+      c.save();
+      [{x:x0,y:ca.top,w:ca.right-x0,h:y0-ca.top,col:'rgba(111,207,122,0.03)'},
+       {x:ca.left,y:ca.top,w:x0-ca.left,h:y0-ca.top,col:'rgba(106,180,232,0.03)'},
+       {x:ca.left,y:y0,w:x0-ca.left,h:ca.bottom-y0,col:'rgba(232,122,106,0.03)'},
+       {x:x0,y:y0,w:ca.right-x0,h:ca.bottom-y0,col:'rgba(232,201,106,0.03)'},
+      ].forEach(f=>{c.fillStyle=f.col;c.fillRect(f.x,f.y,f.w,f.h);});
+      c.strokeStyle='#253025';c.lineWidth=1;c.setLineDash([4,5]);
+      c.beginPath();c.moveTo(x0,ca.top);c.lineTo(x0,ca.bottom);c.stroke();
+      c.beginPath();c.moveTo(ca.left,y0);c.lineTo(ca.right,y0);c.stroke();
+      c.setLineDash([2,8]);c.strokeStyle='#1e2a1e';
+      c.beginPath();c.moveTo(ca.left,ca.bottom);c.lineTo(ca.right,ca.top);c.stroke();
+      c.beginPath();c.moveTo(ca.left,ca.top);c.lineTo(ca.right,ca.bottom);c.stroke();
+      c.setLineDash([]);c.font='bold 10px DM Mono';
+      c.fillStyle='rgba(111,207,122,0.25)';c.fillText('Q1',x0+6,ca.top+14);
+      c.fillStyle='rgba(106,180,232,0.25)';c.fillText('Q2',ca.left+6,ca.top+14);
+      c.fillStyle='rgba(232,122,106,0.25)';c.fillText('Q3',ca.left+6,ca.bottom-6);
+      c.fillStyle='rgba(232,201,106,0.25)';c.fillText('Q4',x0+6,ca.bottom-6);
+      c.restore();
+    }
+  };
+}
+let chart1inst=null,chart2inst=null;
+function drawDiagram(m,ings){
+  if(chart1inst)chart1inst.destroy();
+  const ctx=document.getElementById('chart1').getContext('2d');
+  const allPts=[{x:0,y:0},
+    ...ings.map((_,i)=>({x:m.vecs[i][0]/100,y:m.vecs[i][1]/100})),
+    {x:m.Bx,y:m.By},{x:m.Bsx,y:m.Bsy},{x:m.BgX,y:m.BgY},{x:m.BfX,y:m.BfY}];
+  const b=chartBounds(allPts);
+  const ingDS=ings.map((ing,i)=>({
+    label:`${ing.name} ${ing.pct}%`,
+    _q:ing.q, _endX:m.vecs[i][0]/100, _endY:m.vecs[i][1]/100,
+    data:[{x:0,y:0},{x:m.vecs[i][0]/100,y:m.vecs[i][1]/100}],
+    borderColor:QCOLORS[ing.q]+'bb',borderWidth:1.5,
+    pointRadius:[0,5],pointBackgroundColor:QCOLORS[ing.q],showLine:true,tension:0,
+  }));
+  chart1inst=new Chart(ctx,{
+    type:'scatter',
+    data:{datasets:[
+      ...ingDS,
+      {label:'path',_isPath:true,
+       data:[{x:m.Bx,y:m.By},{x:m.BgX,y:m.BgY},{x:m.BfX,y:m.BfY}],
+       borderColor:'#ffffff22',borderDash:[2,5],borderWidth:1,pointRadius:0,showLine:true,tension:.3},
+      {label:'B',_isB:true,
+       data:[{x:m.Bx,y:m.By}],
+       pointRadius:9,pointStyle:'circle',pointBackgroundColor:'transparent',
+       pointBorderColor:'#aaa',pointBorderWidth:2,showLine:false},
+      {label:'Bs',_isBs:true,
+       data:[{x:m.Bsx,y:m.Bsy}],
+       pointRadius:7,pointStyle:'triangle',pointBackgroundColor:'transparent',
+       pointBorderColor:'#cc88ff',pointBorderWidth:2,showLine:false},
+      {label:'Bg',_isBg:true,
+       data:[{x:m.BgX,y:m.BgY}],
+       pointRadius:9,pointStyle:'rect',pointBackgroundColor:'transparent',
+       pointBorderColor:'#6ab4e8',pointBorderWidth:2,showLine:false},
+      {label:'B*',_isBf:true,
+       data:[{x:m.BfX,y:m.BfY}],
+       pointRadius:11,pointStyle:'star',
+       pointBackgroundColor:'#e8c96a',pointBorderColor:'#e8c96a',showLine:false},
+    ]},
+    options:{
+      animation:{duration:300},responsive:true,maintainAspectRatio:false,
+      scales:{
+        x:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:10},maxTicksLimit:9},title:{display:true,text:'← Absorvente  |  Drenante →',color:'#4a5a4a',font:{family:'DM Mono',size:10}},border:{color:'#253025'}},
+        y:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:10},maxTicksLimit:9},title:{display:true,text:'← Orgânico  |  Inorgânico →',color:'#4a5a4a',font:{family:'DM Mono',size:10}},border:{color:'#253025'}},
+      },
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#181b18',borderColor:'#252a25',borderWidth:1,
+          titleColor:'#cdd4cd',bodyColor:'#7a897a',
+          titleFont:{family:'DM Mono'},bodyFont:{family:'DM Mono'},
+          callbacks:{label:ctx=>{const p=ctx.parsed;return`${ctx.dataset.label}: (${p.x.toFixed(3)}, ${p.y.toFixed(3)})`;}}}
+      }
+    },
+    plugins:[makeQuadrantPlugin('q1'),{
+      id:'diagram_labels',
+      afterDraw(chart){
+        const {ctx:c,scales:sc,data}=chart;
+        c.save();
+        data.datasets.forEach((ds,di)=>{
+          if(!ds.showLine||!ds.data||ds.data.length<2) return;
+          if(ds._isPath) return;
+          const p0=ds.data[0],p1=ds.data[ds.data.length-1];
+          const x0=sc.x.getPixelForValue(p0.x),y0=sc.y.getPixelForValue(p0.y);
+          const x1=sc.x.getPixelForValue(p1.x),y1=sc.y.getPixelForValue(p1.y);
+          if(Math.sqrt((x1-x0)**2+(y1-y0)**2)<4) return;
+          const angle=Math.atan2(y1-y0,x1-x0),al=9;
+          const col=QCOLORS[ds._q]||'#fff';
+          c.fillStyle=col;
+          c.beginPath();c.moveTo(x1,y1);
+          c.lineTo(x1-al*Math.cos(angle-.4),y1-al*Math.sin(angle-.4));
+          c.lineTo(x1-al*Math.cos(angle+.4),y1-al*Math.sin(angle+.4));
+          c.closePath();c.fill();
+          if(ds._q){
+            const parts=ds.label.split(' ');
+            const pct=parts.pop();const name=parts.join(' ');
+            const ox=x1>sc.x.getPixelForValue(0)?8:-8;
+            const align=ox>0?'left':'right';
+            c.textAlign=align;
+            c.font='10px DM Mono';c.fillStyle='#cdd4cd';
+            c.fillText(name,x1+ox,y1-5);
+            c.font='9px DM Mono';c.fillStyle='#6a7a6a';
+            c.fillText(pct,x1+ox,y1+6);
+            c.textAlign='left';
+          }
+        });
+        [{lbl:'B',x:m.Bx,y:m.By,col:'#aaaaaa'},{lbl:'Bs',x:m.Bsx,y:m.Bsy,col:'#cc88ff'},{lbl:'Bg',x:m.BgX,y:m.BgY,col:'#6ab4e8'},{lbl:'B*',x:m.BfX,y:m.BfY,col:'#e8c96a'}].forEach(lp=>{
+          const px=sc.x.getPixelForValue(lp.x),py=sc.y.getPixelForValue(lp.y);
+          c.font='bold 11px DM Mono';c.fillStyle=lp.col;
+          c.fillText(lp.lbl,px+14,py-4);
+          c.font='9px DM Mono';c.fillStyle=lp.col+'99';
+          c.fillText(`(${lp.x.toFixed(2)},${lp.y.toFixed(2)})`,px+14,py+7);
+        });
+        c.restore();
+      }
+    }]
+  });
+  const l1=document.getElementById('legend1');
+  l1.innerHTML=ings.map(ing=>`<div class="legend-item"><div class="legend-dot" style="background:${QCOLORS[ing.q]}"></div><span>${ing.name} <span style="color:var(--text-dim)">${ing.pct}% ${ing.q}</span></span></div>`).join('')
+    +`<div class="legend-item"><span style="display:inline-block;width:14px;height:2px;background:#aaa;opacity:.5;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">B — Tendência Estrutural</span></div>
+       <div class="legend-item"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;border:2px solid #cc88ff;background:transparent;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">Bs — Tendência Material</span></div>
+       <div class="legend-item"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;border:2px solid #6ab4e8;background:transparent;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">Bg — Tendência Granulométrica</span></div>
+       <div class="legend-item"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e8c96a;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">B★ — Tendência Final</span></div>`;
+}
+function updateDiagram(m, ings){
+  if(!chart1inst) return;
+  const ds = chart1inst.data.datasets;
+  const nIng = ings.length;
+  ings.forEach((ing,i)=>{
+    if(!ds[i]) return;
+    ds[i].label = `${ing.name} ${ing.pct}%`;
+    ds[i].data  = [{x:0,y:0},{x:m.vecs[i][0]/100,y:m.vecs[i][1]/100}];
+  });
+  const pathDS = ds.find(d=>d._isPath);
+  if(pathDS) pathDS.data = [{x:m.Bx,y:m.By},{x:m.BgX,y:m.BgY},{x:m.BfX,y:m.BfY}];
+  const bDS=ds.find(d=>d._isB); if(bDS) bDS.data=[{x:m.Bx,y:m.By}];
+  const bsDS=ds.find(d=>d._isBs); if(bsDS) bsDS.data=[{x:m.Bsx,y:m.Bsy}];
+  const bgDS=ds.find(d=>d._isBg); if(bgDS) bgDS.data=[{x:m.BgX,y:m.BgY}];
+  const bfDS=ds.find(d=>d._isBf); if(bfDS) bfDS.data=[{x:m.BfX,y:m.BfY}];
+  chart1inst.update('none');
+  const l1=document.getElementById('legend1');
+  l1.innerHTML=ings.map(ing=>`<div class="legend-item"><div class="legend-dot" style="background:${QCOLORS[ing.q]}"></div><span>${ing.name} <span style="color:var(--text-dim)">${ing.pct}% ${ing.q}</span></span></div>`).join('')
+    +`<div class="legend-item"><span style="display:inline-block;width:14px;height:2px;background:#aaa;opacity:.5;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">B — Tendência Estrutural</span></div>
+       <div class="legend-item"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;border:2px solid #cc88ff;background:transparent;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">Bs — Tendência Material</span></div>
+       <div class="legend-item"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;border:2px solid #6ab4e8;background:transparent;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">Bg — Tendência Granulométrica</span></div>
+       <div class="legend-item"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e8c96a;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">B★ — Tendência Final</span></div>`;
+}
+function setupChart1Drag(m, ings){
+  const canvas = document.getElementById('chart1');
+  if(canvas._dragHandler){ canvas.removeEventListener('mousedown', canvas._dragHandler); }
+  canvas._dragHandler = function(e){
+    if(!chart1inst) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const sc = chart1inst.scales;
+    let hitIdx = -1, hitDist = 99;
+    ings.forEach((ing, i) => {
+      if(!m.vecs||!m.vecs[i]) return;
+      const ex = m.vecs[i][0]/100;
+      const ey = m.vecs[i][1]/100;
+      const px = sc.x.getPixelForValue(ex);
+      const py = sc.y.getPixelForValue(ey);
+      const d = Math.sqrt((mx-px)**2 + (my-py)**2);
+      if(d < 14 && d < hitDist){ hitDist=d; hitIdx=i; }
+    });
+    if(hitIdx < 0) return;
+    e.preventDefault();
+    _isDragging = true;
+    const startX = e.clientX;
+    const startPct = ings[hitIdx].pct;
+    const q = ings[hitIdx].q;
+    let lastPct = startPct;
+    canvas.style.cursor = 'ew-resize';
+    const onMove = ev => {
+      const dx = ev.clientX - startX;
+      let newPct = Math.round(Math.max(1, Math.min(99, startPct + dx * 0.2)));
+      if(newPct === lastPct) return;
+      const diff = newPct - lastPct;
+      lastPct = newPct;
+      const others = ings.filter((_,j) => j !== hitIdx);
+      const otherTotal = others.reduce((s,o) => s + o.pct, 0);
+      if(otherTotal <= 0){
+        // 1 ingrediente: mantém sempre 100%, drag não altera pct mas roda o modelo
+        ings[hitIdx].pct = 100;
+        renderIngredients();
+        updateTotal();
+        liveRecalc('drag');
+        return;
+      }
+      ings[hitIdx].pct = newPct;
+      let remaining = 100 - newPct;
+      let runningSum = 0;
+      others.forEach((o, k) => {
+        if(k === others.length-1){
+          o.pct = Math.max(1, remaining - runningSum);
+        } else {
+          const share = Math.round(o.pct / otherTotal * remaining);
+          o.pct = Math.max(1, share);
+          runningSum += o.pct;
+        }
+      });
+      renderIngredients();
+      updateTotal();
+      liveRecalc('drag');
+    };
+    const onUp = () => {
+      _isDragging = false;
+      canvas.style.cursor = '';
+      if(ingredients.length===1) ingredients[0].pct=100;
+      const mFinal = computeModel(ingredients);
+      drawDiagram(mFinal, ingredients);
+      setupChart1Drag(mFinal, ingredients);
+      updateSensitivity(mFinal, ingredients);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+  canvas.addEventListener('mousedown', canvas._dragHandler);
+  if(canvas._hoverHandler){ canvas.removeEventListener('mousemove', canvas._hoverHandler); }
+  canvas._hoverHandler = function(e){
+    if(!chart1inst) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const sc = chart1inst.scales;
+    let near = false;
+    ings.forEach((ing, i) => {
+      const px = sc.x.getPixelForValue(m.vecs[i][0]/100);
+      const py = sc.y.getPixelForValue(m.vecs[i][1]/100);
+      if(Math.sqrt((mx-px)**2+(my-py)**2) < 14) near = true;
+    });
+    canvas.style.cursor = near ? 'ew-resize' : '';
+  };
+  canvas.addEventListener('mousemove', canvas._hoverHandler);
+}
+function computeArrows(m,ings){
+  return ings.map((ing,idx)=>{
+    const mod=ings.map((x,j)=>{
+      if(j===idx)return{...x,pct:x.pct+10};
+      return{...x,pct:Math.max(0,x.pct-x.pct/(100-ing.pct)*10)};
+    });
+    const mn=computeModel(mod);
+    const dx=mn.BfX-m.BfX,dy=mn.BfY-m.BfY;
+    return{name:ing.name,pct:ing.pct,q:ing.q,idx:idx,dx,dy,mag:Math.sqrt(dx**2+dy**2)};
+  });
+}
+function drawSensitivity(m,ings){
+  if(chart2inst)chart2inst.destroy();
+  const ctx=document.getElementById('chart2').getContext('2d');
+  const arrows=computeArrows(m,ings);
+  const maxMag=Math.max(...arrows.map(a=>a.mag),0.001);
+  const SCALE=Math.min(0.55/maxMag,15);
+  const allPts=[{x:m.BfX,y:m.BfY},...arrows.map(a=>({x:m.BfX+a.dx*SCALE,y:m.BfY+a.dy*SCALE}))];
+  const b=chartBounds(allPts);
+  chart2inst=new Chart(ctx,{
+    type:'scatter',
+    data:{datasets:[
+      {label:'B*',data:[{x:m.BfX,y:m.BfY}],pointRadius:12,pointStyle:'star',
+       pointBackgroundColor:'#e8c96a',pointBorderColor:'#e8c96a',showLine:false},
+      ...arrows.map(a=>({
+        label:`+10% ${a.name}`,_arrow:a,
+        data:[{x:m.BfX,y:m.BfY},{x:m.BfX+a.dx*SCALE,y:m.BfY+a.dy*SCALE}],
+        borderColor:QCOLORS[a.q],borderWidth:2.5,
+        pointRadius:[0,5],pointBackgroundColor:QCOLORS[a.q],showLine:true,
+      }))
+    ]},
+    options:{
+      animation:{duration:400},responsive:true,maintainAspectRatio:false,
+      onClick(evt, elements){
+        if(!elements.length) return;
+        const ds=chart2inst.data.datasets[elements[0].datasetIndex];
+        if(!ds._arrow) return;
+        const idx=ds._arrow.idx;
+        if(idx==null) return;
+        const bump=10;
+        const cur=ingredients[idx].pct;
+        const newPct=Math.min(99, cur+bump);
+        const diff=newPct-cur;
+        const others=ingredients.filter((_,j)=>j!==idx);
+        const otherTotal=others.reduce((s,o)=>s+o.pct,0);
+        if(otherTotal<=0) return;
+        ingredients[idx].pct=newPct;
+        others.forEach(o=>{ o.pct=Math.max(1,Math.round(o.pct*(1-diff/otherTotal))); });
+        const total=ingredients.reduce((s,i)=>s+i.pct,0);
+        ingredients[idx].pct+=100-total;
+        renderIngredients(); updateTotal(); liveRecalc('click');
+        const canvas=document.getElementById('chart2');
+        canvas.style.outline='2px solid '+QCOLORS[ds._arrow.q];
+        setTimeout(()=>canvas.style.outline='',400);
+      },
+      onHover(evt,elements){
+        document.getElementById('chart2').style.cursor=elements.length&&chart2inst.data.datasets[elements[0].datasetIndex]._arrow?'pointer':'default';
+      },
+      scales:{
+        x:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:10},maxTicksLimit:9},title:{display:true,text:'← Absorvente  |  Drenante →',color:'#4a5a4a',font:{family:'DM Mono',size:10}},border:{color:'#253025'}},
+        y:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:10},maxTicksLimit:9},title:{display:true,text:'← Orgânico  |  Inorgânico →',color:'#4a5a4a',font:{family:'DM Mono',size:10}},border:{color:'#253025'}},
+      },
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#181b18',borderColor:'#252a25',borderWidth:1,
+          titleColor:'#cdd4cd',bodyColor:'#7a897a',
+          titleFont:{family:'DM Mono'},bodyFont:{family:'DM Mono'},
+          callbacks:{label:ctx=>{const a=ctx.dataset._arrow;if(a)return[`${'clique para +10%'} · ${a.name} (${a.pct}%)`,`ΔX=${a.dx.toFixed(3)}  ΔY=${a.dy.toFixed(3)}`,`|Δ|=${a.mag.toFixed(3)}`];return ctx.dataset.label;}}}
+      }
+    },
+    plugins:[makeQuadrantPlugin('q2'),{
+      id:'sens_labels',
+      beforeDraw(chart){
+        const {ctx:c,chartArea:ca,scales:sc}=chart;
+        const x0=sc.x.getPixelForValue(0),y0=sc.y.getPixelForValue(0);
+        c.save();c.font='9px DM Mono';
+        c.fillStyle='rgba(111,207,122,0.2)';c.fillText('→ mais drenante',x0+5,ca.top+13);
+        c.fillStyle='rgba(232,122,106,0.2)';c.fillText('← mais absorvente',ca.left+5,ca.bottom-5);
+        c.fillStyle='rgba(106,180,232,0.2)';c.fillText('↑ mais inorgânico',ca.left+5,y0-5);
+        c.fillStyle='rgba(232,201,106,0.2)';c.fillText('↓ mais orgânico',x0+5,ca.bottom-5);
+        c.restore();
+      },
+      afterDraw(chart){
+        const {ctx:c,scales:sc,data}=chart;
+        c.save();
+        const bStar=data.datasets[0]&&data.datasets[0].data[0];
+        if(!bStar){c.restore();return;}
+        const x0=sc.x.getPixelForValue(bStar.x),y0=sc.y.getPixelForValue(bStar.y);
+        data.datasets.forEach(ds=>{
+          if(!ds.showLine||!ds._arrow) return;
+          const a=ds._arrow;
+          const tip=ds.data[ds.data.length-1];
+          const x1=sc.x.getPixelForValue(tip.x),y1=sc.y.getPixelForValue(tip.y);
+          const dist=Math.sqrt((x1-x0)**2+(y1-y0)**2);
+          if(dist<3)return;
+          const angle=Math.atan2(y1-y0,x1-x0),al=10;
+          c.fillStyle=QCOLORS[a.q];
+          c.beginPath();c.moveTo(x1,y1);
+          c.lineTo(x1-al*Math.cos(angle-.4),y1-al*Math.sin(angle-.4));
+          c.lineTo(x1-al*Math.cos(angle+.4),y1-al*Math.sin(angle+.4));
+          c.closePath();c.fill();
+          const ox=x1-x0>0?9:-9;
+          c.textAlign=ox>0?'left':'right';
+          c.font='10px DM Mono';c.fillStyle='#cdd4cd';
+          c.fillText(a.name,x1+ox,y1+(y1-y0>0?13:-5));
+          c.font='9px DM Mono';c.fillStyle='#6a7a6a';
+          c.fillText(`Δ(${a.dx.toFixed(2)},${a.dy.toFixed(2)})`,x1+ox,y1+(y1-y0>0?24:6));
+          c.textAlign='left';
+        });
+        c.font='bold 11px DM Mono';c.fillStyle='#e8c96a';
+        c.fillText('B*',x0+16,y0-10);
+        c.restore();
+      }
+    }]
+  });
+  const arrows2=computeArrows(m,ings);
+  const l2=document.getElementById('legend2');
+  l2.innerHTML=arrows2.map(a=>{
+    const d=a.dx>0.005?('→dren'):a.dx<-0.005?('←abs'):'—';
+    const o=a.dy>0.005?('↑inorg'):a.dy<-0.005?('↓org'):'—';
+    return`<div class="legend-item"><div class="legend-line" style="background:${QCOLORS[a.q]}"></div><span>${a.name} <span style="color:var(--text-dim)">${d} ${o} |Δ|=${a.mag.toFixed(3)}</span></span></div>`;
+  }).join('');
+}
+function updateSensitivity(m, ings){
+  if(!chart2inst) return;
+  const arrows = computeArrows(m, ings);
+  const maxMag = Math.max(...arrows.map(a=>a.mag), 0.001);
+  const SCALE  = Math.min(0.55/maxMag, 15);
+  const ds = chart2inst.data.datasets;
+  ds[0].data = [{x:m.BfX, y:m.BfY}];
+  arrows.forEach((a,i)=>{
+    const d = ds[i+1];
+    if(!d) return;
+    d.label  = `+10% ${a.name}`;
+    d._arrow = a;
+    d.data   = [{x:m.BfX, y:m.BfY}, {x:m.BfX+a.dx*SCALE, y:m.BfY+a.dy*SCALE}];
+  });
+  const allPts=[{x:m.BfX,y:m.BfY},...arrows.map(a=>({x:m.BfX+a.dx*SCALE,y:m.BfY+a.dy*SCALE}))];
+  const b = chartBounds(allPts);
+  chart2inst.options.scales.x.min = b.min;
+  chart2inst.options.scales.x.max = b.max;
+  chart2inst.options.scales.y.min = b.min;
+  chart2inst.options.scales.y.max = b.max;
+  chart2inst.update('none');
+  const l2=document.getElementById('legend2');
+  l2.innerHTML=arrows.map(a=>{
+    const d=a.dx>0.005?('→dren'):a.dx<-0.005?('←abs'):'—';
+    const o=a.dy>0.005?('↑inorg'):a.dy<-0.005?('↓org'):'—';
+    return`<div class="legend-item"><div class="legend-line" style="background:${QCOLORS[a.q]}"></div><span>${a.name} <span style="color:var(--text-dim)">${d} ${o} |Δ|=${a.mag.toFixed(3)}</span></span></div>`;
+  }).join('');
+}
+function renderResults(m,ings){
+  const qB=quadrantOf(m.Bx,m.By),qBg=quadrantOf(m.BgX,m.BgY),qBf=quadrantOf(m.BfX,m.BfY);
+  document.getElementById('summaryCards').innerHTML=`
+    <div class="result-card">
+      <div class="rlabel">Tendência Estrutural</div>
+      <div class="rcoords">(${m.Bx.toFixed(3)}, ${m.By.toFixed(3)})</div>
+      <span class="qtag" style="background:${QBG[qB]};color:${QCOLORS[qB]};border:1px solid ${QBORD[qB]}">${qB} — ${quadrantLabel(qB)}</span>
+    </div>
+    <div class="result-card">
+      <div class="rlabel">Tendência Granulométrica</div>
+      <div class="rcoords">(${m.BgX.toFixed(3)}, ${m.BgY.toFixed(3)})</div>
+      <div class="rsub">${m.Ig!=null?`Ig=${m.Ig.toFixed(3)} · GD=${m.GD.toFixed(2)}mm · GA=${m.GA.toFixed(2)}mm · ΔX=${m.dXg.toFixed(3)}`:Object.keys(m.intraQ||{}).length>0?(()=>{const q=Object.keys(m.intraQ)[0];const iq=m.intraQ[q];return`TRG(${q})=${iq.Icd.toFixed(3)} · GD=${iq.GD.toFixed(2)}mm · GA=${iq.GA.toFixed(2)}mm`;})():'—'}</div>
+      <span class="qtag" style="background:${QBG[qBg]};color:${QCOLORS[qBg]};border:1px solid ${QBORD[qBg]}">${qBg} — ${quadrantLabel(qBg)}</span>
+    </div>
+    <div class="result-card">
+      <div class="rlabel">Tendência Final</div>
+      <div class="rcoords">(${m.BfX.toFixed(3)}, ${m.BfY.toFixed(3)})</div>
+      <div class="rsub">Rd=${m.Rd.toFixed(3)} · Rd_ef=${m.RdEf.toFixed(3)} · Δ=(${m.dXd.toFixed(3)},${m.dYd.toFixed(3)})</div>
+      <span class="qtag" style="background:${QBG[qBf]};color:${QCOLORS[qBf]};border:1px solid ${QBORD[qBf]}">${qBf} — ${quadrantLabel(qBf)}</span>
+    </div>`;
+  const qOrder=['Q1','Q2','Q3','Q4'];
+  let calcRows='';
+  qOrder.forEach(q=>{
+    const qIngs=ings.map((ing,i)=>({...ing,vec:m.vecs[i]})).filter(x=>x.q===q);
+    if(!qIngs.length) return;
+    const totalPct=qIngs.reduce((s,x)=>s+x.pct,0);
+    const avgGran=qIngs.some(x=>x.gran!=null)?qIngs.filter(x=>x.gran!=null).reduce((s,x)=>s+x.gran*x.pct,0)/qIngs.filter(x=>x.gran!=null).reduce((s,x)=>s+x.pct,0):null;
+    const avgVx=qIngs.reduce((s,x)=>s+x.vec[0]*x.pct,0)/totalPct;
+    const avgVy=qIngs.reduce((s,x)=>s+x.vec[1]*x.pct,0)/totalPct;
+    calcRows+=`<tr style="background:${QBG[q]};border-top:2px solid ${QBORD[q]}">
+      <td colspan="2" style="color:${QCOLORS[q]};font-size:10px;letter-spacing:1px;font-weight:600;padding:6px 11px">
+        ${q} — ${quadrantLabel(q)}</td>
+      <td style="text-align:right;color:${QCOLORS[q]};font-weight:600">${totalPct}%</td>
+      <td style="text-align:right;color:var(--text-dim);font-size:10px">${avgGran!=null?'⌀ '+avgGran.toFixed(1)+'mm':'—'}</td>
+      <td style="text-align:right;color:${avgVx>=0?'#6fcf7a':'#e87a6a'};font-weight:600">${avgVx>=0?'+':''}${avgVx.toFixed(1)}</td>
+      <td style="text-align:right;color:${avgVy>=0?'#6fcf7a':'#e87a6a'};font-weight:600">${avgVy>=0?'+':''}${avgVy.toFixed(1)}</td>
+    </tr>`;
+    qIngs.forEach(x=>{
+      calcRows+=`<tr style="opacity:.85">
+        <td style="padding-left:20px;color:var(--text-dim);font-size:10px">↳</td>
+        <td style="font-size:11px">${x.name}</td>
+        <td style="text-align:right;font-size:11px">${x.pct}%</td>
+        <td style="text-align:right;font-size:11px;color:var(--text-dim)">${x.gran!=null?x.gran+'mm':'—'}</td>
+        <td style="text-align:right;font-size:11px;color:${x.vec[0]>=0?'#6fcf7a':'#e87a6a'}">${x.vec[0]>=0?'+':''}${x.vec[0].toFixed(1)}</td>
+        <td style="text-align:right;font-size:11px;color:${x.vec[1]>=0?'#6fcf7a':'#e87a6a'}">${x.vec[1]>=0?'+':''}${x.vec[1].toFixed(1)}</td>
+      </tr>`;
+    });
+  });
+  const bRows=[
+    {lbl:'B — Baricentro',x:m.Bx,y:m.By,col:'#aaaaaa',sub:'média ponderada'},
+    {lbl:'Bg — Correção Gran.',x:m.BgX,y:m.BgY,col:'#6ab4e8',sub:`ΔX=${m.dXg!=null?m.dXg.toFixed(3):'—'}`},
+    {lbl:'B* — Final',x:m.BfX,y:m.BfY,col:'#e8c96a',sub:`Δ=(${m.dXd.toFixed(3)},${m.dYd.toFixed(3)})`},
+  ].map(b=>`<tr style="background:var(--surface)">
+    <td colspan="2" style="color:${b.col};font-size:10px;font-weight:600;letter-spacing:.5px">${b.lbl}</td>
+    <td style="text-align:right;color:var(--text-dim);font-size:10px">${b.sub}</td>
+    <td></td>
+    <td style="text-align:right;color:${b.x>=0?'#6fcf7a':'#e87a6a'};font-weight:600">${b.x>=0?'+':''}${b.x.toFixed(3)}</td>
+    <td style="text-align:right;color:${b.y>=0?'#6fcf7a':'#e87a6a'};font-weight:600">${b.y>=0?'+':''}${b.y.toFixed(3)}</td>
+  </tr>`).join('');
+  document.getElementById('calcTableCompo').innerHTML=`<table><thead><tr>
+    <th colspan="2">${'Componente'}</th><th style="text-align:right">%</th>
+    <th style="text-align:right">${'Gran.'}</th><th style="text-align:right">vX</th><th style="text-align:right">vY</th>
+  </tr></thead><tbody>${calcRows}
+    <tr><td colspan="6" style="padding:0;border-top:2px solid var(--border)"></td></tr>
+    ${bRows}
+  </tbody></table>`;
+  let hydroLabel, hydroColor, hydroConseq;
+  if (m.BfX > 0.2) {
+    hydroLabel  = 'Tendência Drenante';
+    hydroColor  = '#6fcf7a';
+    hydroConseq = 'A água tende a percolar rapidamente após a irrigação. O substrato favorece a difusão de oxigênio na rizosfera e reduz o tempo de saturação — mas aumenta a dependência da frequência de irrigação para manter a umidade adequada.';
+  } else if (m.BfX < -0.2) {
+    hydroLabel  = 'Tendência Absorvente';
+    hydroColor  = '#6ab4e8';
+    hydroConseq = 'O substrato retém água por mais tempo após a irrigação. Isso pode ser favorável em espécies com maior demanda hídrica, mas exige atenção ao risco de saturação prolongada e menor difusão de oxigênio para as raízes.';
+  } else {
+    hydroLabel  = 'Tendência Equilibrada';
+    hydroColor  = '#cdd4cd';
+    hydroConseq = 'Equilíbrio relativo entre macroporos e microporos estruturais. O substrato oferece estabilidade hídrica e ambiente favorável ao crescimento radicular na maioria das espécies.';
+  }
+  let strucLabel, strucColor, strucConseq;
+  if (m.BfY > 0.2) {
+    strucLabel  = 'Predominância Mineral';
+    strucColor  = '#6fcf7a';
+    strucConseq = 'A estrutura é dominada por componentes minerais. Espera-se alta estabilidade ao longo do tempo, com baixa transformação por decomposição e manutenção das propriedades físicas do substrato.';
+  } else if (m.BfY < -0.2) {
+    strucLabel  = 'Predominância Orgânica';
+    strucColor  = '#e87a6a';
+    strucConseq = 'A maior parte da estrutura é composta por materiais orgânicos. Isso favorece a retenção hídrica e a atividade biológica, mas implica maior transformação estrutural ao longo do tempo à medida que os componentes se decompõem.';
+  } else {
+    strucLabel  = 'Balanço Mineral-Orgânico';
+    strucColor  = '#cdd4cd';
+    strucConseq = 'Mistura equilibrada entre frações minerais e orgânicas. Combina estabilidade estrutural com boa capacidade de retenção hídrica e atividade biológica moderada.';
+  }
+  let granLabel, granColor, granConseq;
+  const iqKeys = Object.keys(m.intraQ || {});
+  const iq     = iqKeys.length ? m.intraQ[iqKeys[0]] : null;
+  const isMixedRecipe = !iqKeys.length;
+  if (m.Ig != null) {
+    if (m.Ig > 1.3) {
+      granLabel  = 'Absorventes Relativamente Grossos';
+      granColor  = '#e8c96a';
+      granConseq = 'Os materiais absorventes têm granulometria maior que os drenantes. A retenção hídrica tende a se distribuir em poros maiores, com menor capilaridade efetiva e menor uniformidade de umedecimento.';
+    } else if (m.Ig < 0.7) {
+      granLabel  = 'Absorventes Relativamente Finos';
+      granColor  = '#e87a6a';
+      granConseq = 'Os materiais absorventes são finos em relação aos drenantes. Existe risco de preenchimento intergranular — os finos ocupam os espaços entre os grãos maiores, aumentando a retenção hídrica e potencialmente comprometendo a drenagem.';
+    } else {
+      granLabel  = 'Equilíbrio Granulométrico';
+      granColor  = '#6fcf7a';
+      granConseq = 'As granulometrias dos materiais absorventes e drenantes são proporcionais. O substrato tende a apresentar comportamento hidráulico mais previsível e maior estabilidade estrutural.';
+    }
+  } else if (iq && iq.Icd != null) {
+    if (iq.Icd > 0.7) {
+      granLabel  = 'Dispersão Granulométrica Adequada';
+      granColor  = '#6fcf7a';
+      granConseq = 'As granulometrias dos componentes são complementares dentro do grupo. A estrutura tende a ser estável e com comportamento hidráulico previsível.';
+    } else if (iq.Icd > 0.4) {
+      granLabel  = 'Dispersão Granulométrica Moderada';
+      granColor  = '#e8c96a';
+      granConseq = 'Existe heterogeneidade granulométrica entre os componentes do grupo. Os materiais mais finos podem parcialmente preencher os espaços entre os mais grossos, reduzindo a porosidade efetiva.';
+    } else {
+      granLabel  = 'Dispersão Granulométrica Elevada';
+      granColor  = '#e87a6a';
+      granConseq = 'Grande diferença de granulometria entre os componentes. Os materiais finos tendem a ocupar os poros dos grossos, comprometendo a drenagem e a aeração do substrato.';
+    }
+  } else {
+    granLabel  = 'Granulometria Não Informada';
+    granColor  = 'var(--text-dim)';
+    granConseq = 'Informe a granulometria dos componentes para obter a análise de tendência granulométrica e o índice de colapso.';
+  }
+  let degLabel, degColor, degConseq;
+  const rdFromQ4Only = m.Oa === 0 && m.Od > 0;
+  if (m.Rd === 0) {
+    degLabel  = 'Substrato Totalmente Inorgânico';
+    degColor  = '#6fcf7a';
+    degConseq = 'Sem fração orgânica presente. A estrutura do substrato é altamente estável e não sofrerá transformações por decomposição ao longo do tempo.';
+  } else if (m.Rd < 0.2) {
+    degLabel  = 'Baixa Degradabilidade';
+    degColor  = '#6fcf7a';
+    degConseq = 'A fração orgânica é pequena em relação ao total. Espera-se alta estabilidade estrutural com transformações lentas e de baixo impacto nas propriedades do substrato.';
+  } else if (m.Rd <= 0.5) {
+    degLabel  = 'Transformação Gradual Possível';
+    degColor  = '#e8c96a';
+    degConseq = rdFromQ4Only
+      ? ('A fração orgânica presente é de decomposição lenta. A estrutura é estável no curto prazo, mas pode se transformar gradualmente ao longo de ciclos mais longos de uso.')
+      : ('A fração orgânica absorvente pode se decompor ao longo do tempo, alterando progressivamente a estrutura do substrato. Recomenda-se monitorar a compactação e a drenagem em uso prolongado.');
+  } else {
+    degLabel  = 'Alta Transformação Estrutural Esperada';
+    degColor  = '#e87a6a';
+    degConseq = rdFromQ4Only
+      ? ('Grande proporção de orgânico de decomposição lenta. A estrutura se transformará progressivamente, aumentando a retenção hídrica e reduzindo a aeração ao longo do tempo.')
+      : ('Grande fração orgânica absorvente presente. Espera-se transformação estrutural significativa com o tempo — risco de compactação progressiva, aumento de retenção e redução da aeração radicular.');
+  }
+  const phaseTxt  = m.BfX > 0.2 ? 'Drenante' : m.BfX < -0.2 ? 'Absorvente' : 'Equilibrado';
+  const structTxt = m.BfY > 0.2 ? 'Inorgânico' : m.BfY < -0.2 ? 'Orgânico' : 'Misto';
+  document.getElementById('interpCard').innerHTML = `
+    <div class="interp-grid">
+      <div class="interp-item" style="border-color:${hydroColor};position:relative">
+        <span class="q-info-btn" onclick="openInterpPopup('hidraulico')" style="position:absolute;top:7px;right:7px">?</span>
+        <div class="ilabel">${'Comportamento Hidráulico'}</div>
+        <div class="ivalue" style="color:${hydroColor};font-size:12px;font-weight:500;margin:4px 0 6px">${hydroLabel}</div>
+        <div style="font-size:10px;color:var(--text);line-height:1.65">${hydroConseq}</div>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:6px;letter-spacing:.3px">${'eixo X'} = ${m.BfX.toFixed(3)} · B* = (${m.BfX.toFixed(2)}, ${m.BfY.toFixed(2)})</div>
+      </div>
+      <div class="interp-item" style="border-color:${strucColor};position:relative">
+        <span class="q-info-btn" onclick="openInterpPopup('fisicoquimica')" style="position:absolute;top:7px;right:7px">?</span>
+        <div class="ilabel">${'Natureza Físico-Química'}</div>
+        <div class="ivalue" style="color:${strucColor};font-size:12px;font-weight:500;margin:4px 0 6px">${strucLabel}</div>
+        <div style="font-size:10px;color:var(--text);line-height:1.65">${strucConseq}</div>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:6px;letter-spacing:.3px">${'eixo Y'} = ${m.BfY.toFixed(3)}</div>
+      </div>
+      <div class="interp-item" style="border-color:${granColor};position:relative">
+        <span class="q-info-btn" onclick="openInterpPopup('trg')" style="position:absolute;top:7px;right:7px">?</span>
+        <div class="ilabel">${'Tendência Relativa Granulométrica'}</div>
+        <div class="ivalue" style="color:${granColor};font-size:12px;font-weight:500;margin:4px 0 6px">${granLabel}</div>
+        <div style="font-size:10px;color:var(--text);line-height:1.65">${granConseq}</div>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:6px;letter-spacing:.3px">${m.Ig != null ? `Ig = ${m.Ig.toFixed(3)}` : ''}${m.Icd != null ? ` · Icd = ${m.Icd.toFixed(3)}` : ''}</div>
+      </div>
+      <div class="interp-item" style="border-color:${degColor};position:relative">
+        <span class="q-info-btn" onclick="openInterpPopup('degradabilidade')" style="position:absolute;top:7px;right:7px">?</span>
+        <div class="ilabel">${'Potencial de Degradabilidade'}</div>
+        <div class="ivalue" style="color:${degColor};font-size:12px;font-weight:500;margin:4px 0 6px">${degLabel}</div>
+        <div style="font-size:10px;color:var(--text);line-height:1.65">${degConseq}</div>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:6px;letter-spacing:.3px">Rd = ${m.Rd.toFixed(3)}${m.Oa > 0 ? ` · Q3 = ${m.Oa.toFixed(0)}%` : ''}${m.Od > 0 ? ` · Q4 = ${m.Od.toFixed(0)}%` : ''}</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:9px 12px;background:var(--surface);border-radius:5px;border-left:3px solid var(--border);font-size:9.5px;color:var(--text-dim);line-height:1.65">
+      <span style="color:var(--amber);letter-spacing:.5px;font-size:9px;text-transform:uppercase">⚠ leitura conjunta</span><br>
+      Os quatro painéis podem apresentar características parcialmente contrastantes — isso é esperado e reflete a complexidade real da mistura. Nenhum indicador deve ser interpretado isoladamente. A avaliação final deve considerar simultaneamente o comportamento hidráulico, a natureza físico-química, a granulometria e o potencial de degradabilidade.
+    </div>`;
+  const arrows=computeArrows(m,ings);
+  const maxMag=Math.max(...arrows.map(a=>a.mag),0.001);
+  const sensRows=[...arrows].sort((a,b)=>b.mag-a.mag).map(a=>{
+    const w=Math.round(a.mag/maxMag*80);
+    const dDir=a.dx>0.005?('+dren'):a.dx<-0.005?('-abs'):'—';
+    const oDir=a.dy>0.005?('+inorg'):a.dy<-0.005?('-org'):'—';
+    return`<tr>
+      <td><span class="qtag" style="background:${QBG[a.q]};color:${QCOLORS[a.q]}">${a.q}</span></td>
+      <td>${a.name}</td><td style="text-align:right">${a.pct}%</td>
+      <td style="text-align:right;color:${a.dx>=0?'#6fcf7a':'#e87a6a'}">${a.dx>=0?'+':''}${a.dx.toFixed(3)}</td>
+      <td style="text-align:right;color:${a.dy>=0?'#6fcf7a':'#e87a6a'}">${a.dy>=0?'+':''}${a.dy.toFixed(3)}</td>
+      <td style="text-align:right;color:var(--text-dim)">${dDir}</td>
+      <td style="text-align:right;color:var(--text-dim)">${oDir}</td>
+      <td><div class="bar-bg" style="width:80px"><div class="bar-fill" style="width:${w}px;background:${QCOLORS[a.q]}"></div></div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('sensTable').innerHTML=`<table><thead><tr>
+    <th>${'Classe'}</th><th>${'Ingrediente'}</th><th style="text-align:right">%</th>
+    <th style="text-align:right">ΔX</th><th style="text-align:right">ΔY</th>
+    <th style="text-align:right">${'Hidráulico'}</th><th style="text-align:right">${'Estrutural'}</th>
+    <th title="Magnitude total do deslocamento: |ΔX| + |ΔY|. Maior = mais controle sobre o substrato.">${'Influência ▸'}</th>
+  </tr></thead><tbody>${sensRows}</tbody></table>
+  <div style="margin-top:6px;padding:6px 10px;font-size:9px;color:var(--text-dim);line-height:1.55;background:var(--surface);border-radius:4px">
+    <strong style="color:var(--text-dim);letter-spacing:.5px">Influência</strong> = magnitude total do deslocamento de B★ ao adicionar +10% do componente (|ΔX| + |ΔY|). Barras maiores indicam maior controle estrutural — esses ingredientes são os mais eficazes para corrigir a formulação.
+  </div>`;
+  const iw=document.getElementById('interpCardWrap');
+  const ic=document.getElementById('chevronInterp');
+  const ih=ic?ic.closest('.collapsible-header'):null;
+  if(iw&&!iw.classList.contains('open')){iw.classList.add('open');if(ic)ic.classList.add('open');if(ih)ih.classList.add('open');}
+  // Preservar estado aberto/fechado das seções colapsáveis ao recalcular
+  const wasCalcOpen = document.getElementById('calcTableWrap')?.classList.contains('open');
+  const wasSensOpen = document.getElementById('sensTableWrap')?.classList.contains('open');
+  if(!wasCalcOpen){['calcTableWrap'].forEach(id=>{document.getElementById(id)?.classList.remove('open');});document.getElementById('chevronCalc')?.classList.remove('open');document.querySelector('#calcTableWrap')?.closest('div')?.querySelector('.collapsible-header')?.classList.remove('open');}
+  if(!wasSensOpen){['sensTableWrap'].forEach(id=>{document.getElementById(id)?.classList.remove('open');});document.getElementById('chevronSens')?.classList.remove('open');document.querySelector('#sensTableWrap')?.closest('div')?.querySelector('.collapsible-header')?.classList.remove('open');}
+  const qBnames = {Q1:'Drenante Inorganico',Q2:'Absorvente Inorganico',Q3:'Absorvente Organico',Q4:'Drenante Organico'};
+  const bipHtml=`
+    <h4>${'Leitura dos Baricentros'}</h4>
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr style="background:#e8e8e8">
+        <th style="padding:5px 8px;text-align:left">${'Ponto'}</th>
+        <th style="padding:5px 8px;text-align:center">${'Coordenadas'}</th>
+        <th style="padding:5px 8px;text-align:left">${'Quadrante'}</th>
+        <th style="padding:5px 8px;text-align:left">${'Interpretação'}</th>
+      </tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #ddd">
+          <td style="padding:5px 8px;font-weight:600;color:#555">B</td>
+          <td style="padding:5px 8px;text-align:center;font-family:monospace">(${m.Bx.toFixed(3)}, ${m.By.toFixed(3)})</td>
+          <td style="padding:5px 8px">${quadrantOf(m.Bx,m.By)} — ${qBnames[quadrantOf(m.Bx,m.By)]}</td>
+          <td style="padding:5px 8px;color:#555">${`Posição estrutural bruta — média ponderada dos ${ings.length} componentes`}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #ddd">
+          <td style="padding:5px 8px;font-weight:600;color:#1a5c82">Bg</td>
+          <td style="padding:5px 8px;text-align:center;font-family:monospace">(${m.BgX.toFixed(3)}, ${m.BgY.toFixed(3)})</td>
+          <td style="padding:5px 8px">${quadrantOf(m.BgX,m.BgY)} — ${qBnames[quadrantOf(m.BgX,m.BgY)]}</td>
+          <td style="padding:5px 8px;color:#555">${m.dXg!=null?`Correção granulométrica aplicada: ΔX=${m.dXg.toFixed(3)} ${m.G1!=null&&m.G2!=null?`(G1=${m.G1.toFixed(1)}mm vs G2=${m.G2.toFixed(1)}mm)`:''}`:m.TRG!=null?`TRG: ${m.TRG.toFixed(3)}`:('Sem dados granulométricos suficientes')}</td>
+        </tr>
+        <tr>
+          <td style="padding:5px 8px;font-weight:600;color:#8a6a00">B*</td>
+          <td style="padding:5px 8px;text-align:center;font-family:monospace">(${m.BfX.toFixed(3)}, ${m.BfY.toFixed(3)})</td>
+          <td style="padding:5px 8px">${quadrantOf(m.BfX,m.BfY)} — ${qBnames[quadrantOf(m.BfX,m.BfY)]}</td>
+          <td style="padding:5px 8px;color:#555">${`Posição final após degradabilidade: ΔX=${m.dXd.toFixed(3)}, ΔY=${m.dYd.toFixed(3)} (Rd=${m.Rd.toFixed(2)}, RdEf=${m.RdEf.toFixed(2)})`}</td>
+        </tr>
+      </tbody>
+    </table>`;
+  document.getElementById('pdfInterpBlock').innerHTML=bipHtml;
+  const arrows3=computeArrows(m,ings);
+  const maxMag3=Math.max(...arrows3.map(a=>a.mag),0.001);
+  const sorted3=[...arrows3].sort((a,b)=>b.mag-a.mag);
+  const infRows=sorted3.map(a=>{
+    const w=Math.round(a.mag/maxMag3*160);
+    const dDir=a.dx>0.005?('+ drenante'):a.dx<-0.005?('- absorvente'):('neutro');
+    const oDir=a.dy>0.005?('+ inorganico'):a.dy<-0.005?('- organico'):('neutro');
+    const barColor={Q1:'#1a7a30',Q2:'#1a5c82',Q3:'#7a2020',Q4:'#7a6020'}[a.q];
+    return`<div class="pdf-inf-row">
+      <div style="width:70px;font-size:10px;font-weight:600;color:${barColor}">${a.q}</div>
+      <div style="width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</div>
+      <div style="width:32px;text-align:right;color:#555">${a.pct}%</div>
+      <div style="flex:1;margin:0 8px"><div style="background:#e0e0e0;height:10px;border-radius:3px;overflow:hidden"><div class="pdf-inf-bar" style="width:${w}px;height:10px;background:${barColor}"></div></div></div>
+      <div style="width:90px;font-size:10px;color:#444">${dDir}</div>
+      <div style="width:90px;font-size:10px;color:#444">${oDir}</div>
+      <div style="width:50px;text-align:right;font-size:10px;color:#777">|Δ|=${a.mag.toFixed(3)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('pdfInfluenceBlock').innerHTML=`<h4>${'Influência por Componente (+10%)'}</h4>${infRows}`;
+  // Linha 1: R | Bs
+  const row1col1 = `
+    <div class="index-row" style="border-color:#6fcf7a">
+      <div>
+        <div class="idx-name">Vetor Resultante R</div>
+        <div class="idx-val">(${m.Rx.toFixed(1)}, ${m.Ry.toFixed(1)})</div>
+      </div>
+    </div>`;
+  const row1col2 = `
+    <div class="index-row" style="border-color:#888888">
+      <div>
+        <div class="idx-name">Bs — Baricentro Simples</div>
+        <div class="idx-val">(${m.Bsx.toFixed(3)}, ${m.Bsy.toFixed(3)})</div>
+        <div class="idx-desc">tendência material</div>
+      </div>
+    </div>`;
+
+  // Linha 2: B | Bg
+  const row2col1 = `
+    <div class="index-row" style="border-color:#aaaaaa">
+      <div>
+        <div class="idx-name">Baricentro B</div>
+        <div class="idx-val">(${m.Bx.toFixed(3)}, ${m.By.toFixed(3)})</div>
+        <div class="idx-desc">R normalizado</div>
+      </div>
+    </div>`;
+  const row2col2 = `
+    <div class="index-row" style="border-color:#6ab4e8">
+      <div>
+        <div class="idx-name">Baricentro Bg</div>
+        <div class="idx-val">(${m.BgX.toFixed(3)}, ${m.BgY.toFixed(3)})</div>
+        <div class="idx-desc">ΔXg=${m.dXg>0?'+':''}${m.dXg.toFixed(3)}</div>
+      </div>
+    </div>`;
+
+  // Linha 3: Ig | TRG
+  // Ig: índice granulométrico inter-grupos (Q1 vs Q2/Q3) — só quando há múltiplos quadrantes com granulometria
+  const row3col1 = m.Ig!=null ? `
+    <div class="index-row" style="border-color:#e8c96a">
+      <div>
+        <div class="idx-name">Ig = GA / GD</div>
+        <div class="idx-val">${m.Ig.toFixed(3)}</div>
+        <div class="idx-desc">GD=${m.GD!=null?m.GD.toFixed(2):'—'}mm · GA=${m.GA!=null?m.GA.toFixed(2):'—'}mm · ΔX=${m.dXg>0?'+':''}${m.dXg.toFixed(3)}</div>
+      </div>
+    </div>` : `
+    <div class="index-row" style="border-color:#e8c96a44">
+      <div>
+        <div class="idx-name">Ig = GA / GD</div>
+        <div class="idx-val" style="font-size:12px;color:var(--text-dim)">—</div>
+        <div class="idx-desc">granulometria incompleta</div>
+      </div>
+    </div>`;
+
+  // TRG: interpolação Q1/Q4 — cada quartil separado
+  const icdHtml = m.Icd!=null
+    ? `<div class="idx-desc" style="color:${m.Icd<0.5?'var(--red)':m.Icd<0.8?'var(--amber)':'var(--text-dim)'}">Q1: Icd=${m.Icd.toFixed(3)} — ${m.Icd>0.7?'estável':m.Icd>0.4?'intermediário':'⚠ colapso'} · G1=${m.G1.toFixed(2)}mm · limiar=${m.limiar!=null?m.limiar.toFixed(2):'—'}mm${m.contamQ4>0.1?' · ⚠ contam.Q4='+m.contamQ4.toFixed(2):''}</div>` : '';
+  const icd4Html = m.Icd4!=null
+    ? `<div class="idx-desc" style="color:${m.Icd4<0.5?'var(--red)':m.Icd4<0.8?'var(--amber)':'var(--text-dim)'}">Q4: Icd=${m.Icd4.toFixed(3)} — ${m.Icd4>0.7?'estável':m.Icd4>0.4?'intermediário':'⚠ colapso'} · G4=${m.G4!=null?m.G4.toFixed(2):'—'}mm · limiar=${m.limiar!=null?m.limiar.toFixed(2):'—'}mm</div>` : '';
+  const intraHtml = (()=>{
+    const qs = Object.keys(m.intraQ||{});
+    if(!qs.length) return '';
+    return qs.map(q => {
+      const iq = m.intraQ[q];
+      if(!iq || iq.Icd==null) return '';
+      const cor = iq.Icd<0.5?'var(--red)':iq.Icd<0.8?'var(--amber)':'var(--text-dim)';
+      const status = iq.Icd>0.7?'estável':iq.Icd>0.4?'intermediário':'⚠ colapso';
+      const limiar = iq.GD!=null ? (2/3)*iq.GD : null;
+      const q25Str = iq.GA!=null ? `Q25=${iq.GA.toFixed(2)}mm` : '';
+      const q75Str = iq.GD!=null ? `Q75=${iq.GD.toFixed(2)}mm` : '';
+      const limStr = limiar!=null ? ` · limiar=${limiar.toFixed(2)}mm` : '';
+      const granParts = [q25Str, q75Str].filter(Boolean).join(' · ');
+      return `<div class="idx-desc" style="color:${cor}">${status} · ${iq.n} ingred. · ${granParts}${limStr}</div>`;
+    }).join('');
+  })();
+  const hasTRG = m.Icd!=null || m.Icd4!=null || Object.keys(m.intraQ||{}).length>0;
+  // TRG — Interpolação: só aparece quando mono-quadrante, só drenantes (Q1+Q4) ou só absorventes (Q2+Q3)
+  const somenteDrenantes = m.Ia===0 && m.Oa===0 && (m.Id>0 || m.Od>0);
+  const somenteAbsorventes = m.Id===0 && m.Od===0 && (m.Ia>0 || m.Oa>0);
+  const quadrantesAtivos = [m.Id>0,m.Ia>0,m.Oa>0,m.Od>0].filter(Boolean).length;
+  const monoQuadrante = quadrantesAtivos === 1;
+  const trgAplica = hasTRG && (monoQuadrante || somenteDrenantes || somenteAbsorventes);
+  const row3col2 = trgAplica ? `
+    <div class="index-row" style="border-color:#e8c96a">
+      <div>
+        <div class="idx-name">TRG — Interpolação</div>
+        <div class="idx-val" style="font-size:11px">${(()=>{const parts=[];Object.keys(m.intraQ||{}).forEach(q=>{const iq=m.intraQ[q];if(iq&&iq.Icd!=null)parts.push(`${q}=${iq.Icd.toFixed(3)}`);});if(m.Icd!=null&&!parts.some(p=>p.startsWith('Q1')))parts.unshift(`Q1=${m.Icd.toFixed(3)}`);if(m.Icd4!=null&&!parts.some(p=>p.startsWith('Q4')))parts.push(`Q4=${m.Icd4.toFixed(3)}`);return parts.join(' · ')||'—';})()}</div>
+        ${icdHtml}${icd4Html}${intraHtml}
+      </div>
+    </div>` : `
+    <div class="index-row" style="border-color:#e8c96a44">
+      <div>
+        <div class="idx-name">TRG — Interpolação</div>
+        <div class="idx-val" style="font-size:12px;color:var(--text-dim)">—</div>
+        <div class="idx-desc"></div>
+      </div>
+    </div>`;
+
+  // Linha 4: Rd | B*
+  const row4col1 = `
+    <div class="index-row" style="border-color:#e87a6a">
+      <div>
+        <div class="idx-name">Rd = ${m.Oa>0?'Oa':'Od'} / S</div>
+        <div class="idx-val">${m.Rd.toFixed(3)}</div>
+        <div class="idx-desc">${m.Oa>0?`Oa=${m.Oa.toFixed(0)}%`:`Od=${m.Od.toFixed(0)}%`} · S=${m.S.toFixed(0)}% · Rd_ef=${m.RdEf.toFixed(3)}</div>
+      </div>
+    </div>`;
+  const row4col2 = `
+    <div class="index-row" style="border-color:#e8c96a">
+      <div>
+        <div class="idx-name">Baricentro Final B*</div>
+        <div class="idx-val">(${m.BfX.toFixed(3)}, ${m.BfY.toFixed(3)})</div>
+        <div class="idx-desc">${qBf} — ${quadrantLabel(qBf)}</div>
+      </div>
+    </div>`;
+
+  // Intercalar linha a linha para o grid 2 colunas respeitar a ordem
+  document.getElementById('calcTable').innerHTML =
+    row1col1 + row1col2 +
+    row2col1 + row2col2 +
+    row3col1 + row3col2 +
+    row4col1 + row4col2;
+  document.getElementById('pdfParecer').classList.add('visible');
+  document.getElementById('sidebarCompo').style.display='block';
+  [{q:'Q1',label:'Dren.Inorg.',pct:m.Id,col:'#6fcf7a'},
+   {q:'Q2',label:'Abs.Inorg.',pct:m.Ia,col:'#6ab4e8'},
+   {q:'Q3',label:'Abs.Org.',pct:m.Oa,col:'#e87a6a'},
+   {q:'Q4',label:'Dren.Org.',pct:m.Od,col:'#e8c96a'}].forEach(d=>{
+    document.getElementById('compoList').innerHTML='';
+  });
+  document.getElementById('compoList').innerHTML=[
+    {q:'Q1',pct:m.Id,col:'#6fcf7a'},
+    {q:'Q2',pct:m.Ia,col:'#6ab4e8'},
+    {q:'Q3',pct:m.Oa,col:'#e87a6a'},
+    {q:'Q4',pct:m.Od,col:'#e8c96a'},
+  ].map(d=>`<div style="display:flex;align-items:center;gap:8px;font-size:10px">
+    <span style="color:${d.col};min-width:22px;font-size:9px;letter-spacing:1px">${d.q}</span>
+    <div class="bar-bg" style="flex:1;height:6px"><div class="bar-fill" style="width:${d.pct}%;background:${d.col}"></div></div>
+    <span style="color:var(--text-dim);min-width:30px;text-align:right">${d.pct.toFixed(0)}%</span>
+  </div>`).join('');
+}
+function getPopupData() {
+  return {
+  Q1: {
+    color: '#6fcf7a', bg: 'rgba(111,207,122,.12)',
+    tag:   'Q1 — Drenante Mineral',
+    title: 'Drenante Mineral',
+    body: [
+      'Materiais minerais com baixa absorção de água e alta estabilidade estrutural. Formam macroporos permanentes no substrato, garantindo drenagem rápida e aeração contínua — mesmo após vários ciclos de umedecimento e secagem.',
+      'Por serem inertes e estruturalmente estáveis, praticamente não contribuem para a água disponível às plantas. Sua função é essencialmente de suporte físico e manutenção da estrutura da matriz.',
+    ],
+    gran: 'Granulometria típica: 2 – 10 mm',
+    exemplos: 'pedrisco, areia grossa, caco de telha, brita fina, pumice, lava rock, perlita, carvão vegetal de baixa retenção',
+    note: 'O carvão vegetal é inerte — não degrada. Sua classificação depende da relação peso seco/úmido: amostras de baixa retenção hídrica se enquadram em Q1; amostras de alta absorção, em Q2.',
+  },
+  Q2: {
+    color: '#6ab4e8', bg: 'rgba(106,180,232,.12)',
+    tag:   'Q2 — Absorvente Mineral',
+    title: 'Absorvente Mineral',
+    body: [
+      'Materiais minerais que retêm água em micro e mesoporos, contribuindo para o armazenamento hídrico e, em alguns casos, para a troca catiônica (CTC). São quimicamente estáveis e não sofrem degradação ao longo do tempo.',
+      'A classificação neste quadrante é determinada pela relação entre peso seco e peso úmido da amostra: uma grande diferença entre os dois indica alta retenção hídrica. Quando a granulometria real não é conhecida ou o material está pulverizado, adota-se 0,1 mm no modelo.',
+    ],
+    gran: 'Granulometria típica: 0,1 – 5 mm',
+    exemplos: 'akadama, zeólita, diatomita, argilas calcinadas, bentonita, vermiculita, carvão vegetal de alta absorção',
+    note: 'A vermiculita tem alta capacidade de retenção e CTC elevada — comportamento típico de Q2. O carvão vegetal também pode se enquadrar aqui quando apresenta alta absorção de água, pois é inerte e não degrada.',
+  },
+  Q3: {
+    color: '#e87a6a', bg: 'rgba(232,122,106,.12)',
+    tag:   'Q3 — Absorvente Orgânico',
+    title: 'Absorvente Orgânico',
+    body: [
+      'Materiais orgânicos com alta capacidade de absorção de água, grande área superficial e elevada CTC, responsáveis por aumentar a retenção hídrica e a atividade biológica do substrato.',
+      'São estruturalmente menos estáveis que os absorventes minerais e sofrem decomposição progressiva — o que altera gradualmente a estrutura da mistura, reduzindo a aeração e aumentando a compactação ao longo do tempo.',
+    ],
+    gran: 'Granulometria típica: 1 – 6 mm (ou 0,1 mm se pulverizado)',
+    exemplos: 'turfa, sphagnum, fibra de coco, composto orgânico, húmus, casca de arroz in natura',
+    note: 'A casca de arroz in natura preserva estrutura orgânica ativa com alta absorção — Q3. Materiais pulverizados sem granulometria conhecida podem ser representados como 0,1 mm no modelo sem prejuízo ao cálculo.',
+  },
+  Q4: {
+    color: '#e8c96a', bg: 'rgba(232,201,106,.12)',
+    tag:   'Q4 — Drenante Orgânico',
+    title: 'Drenante Orgânico',
+    body: [
+      'Materiais orgânicos que promovem aeração e formação de macroporos no substrato. Embora favoreçam drenagem, apresentam maior umidade residual do que os drenantes minerais (Q1) — a natureza orgânica do material retém mais água mesmo após drenagem completa.',
+      'Com o tempo, podem se decompor e migrar funcionalmente para a fração absorvente, o que o modelo representa como deslocamento do baricentro em direção a Q3.',
+    ],
+    gran: 'Granulometria típica: 3 – 15 mm',
+    exemplos: 'casca de pinus, chips de madeira, bark chips, fibra de coco longa, casca de arroz carbonizada',
+    note: 'A casca de arroz carbonizada se enquadra em Q4: mantém comportamento drenante com umidade residual elevada. Diferente do carvão vegetal — que é completamente inerte — materiais carbonizados de forma incompleta ainda possuem potencial de degradação lenta.',
+  },
+  };
+}
+function openPopup(q) {
+  const d = getPopupData()[q];
+  if (!d) return;
+  const content = document.getElementById('qPopupContent');
+  content.innerHTML = `
+    <div class="q-popup-tag" style="background:${d.bg};color:${d.color};border:1px solid ${d.color}44">${d.tag}</div>
+    <h2>${d.title}</h2>
+    ${d.body.map(p => `<p>${p}</p>`).join('')}
+    <div class="pop-divider"></div>
+    <div class="pop-examples"><span style="color:var(--text-dim);font-size:9px;letter-spacing:1.5px;text-transform:uppercase">Gran. típica &nbsp;</span><span style="color:${d.color}">${d.gran}</span></div>
+    <div class="pop-examples" style="margin-top:6px"><span style="color:var(--text-dim);font-size:9px;letter-spacing:1.5px;text-transform:uppercase">Exemplos &nbsp;</span><span>${d.exemplos}</span></div>
+    <div class="pop-note">${d.note}</div>
+  `;
+  document.getElementById('qPopupOverlay').classList.add('open');
+  document.addEventListener('keydown', handleEsc);
+}
+function closePopup() {
+  document.getElementById('qPopupOverlay').classList.remove('open');
+  document.removeEventListener('keydown', handleEsc);
+}
+function closePopupOutside(e) {
+  if (e.target === document.getElementById('qPopupOverlay')) closePopup();
+}
+function handleEsc(e) { if (e.key === 'Escape') closePopup(); }
+function getInterpPopupData() {
+  return {
+  hidraulico: {
+    color: '#6fcf7a', bg: 'rgba(111,207,122,.12)',
+    tag:   'Comportamento Hidráulico',
+    title: 'Como o substrato se comporta com a água',
+    body: ['O comportamento hidráulico é determinado pela posição do baricentro estrutural no eixo X e representa o equilíbrio entre macroporos (que drenam) e microporos (que retêm água) na estrutura do substrato.'],
+    variacoes: [
+      { label: 'Tendência Drenante  (X > 0,2)',   texto: 'Predominância de macroporos estruturais. A água tende a percolar rapidamente após a irrigação, favorecendo a difusão de oxigênio na rizosfera e reduzindo o tempo de saturação. Aumenta a dependência de irrigação.' },
+      { label: 'Tendência Equilibrada  (−0,2 ≤ X ≤ 0,2)', texto: 'Equilíbrio relativo entre macroporos e microporos. O substrato oferece estabilidade hídrica e ambiente favorável ao crescimento radicular na maioria das espécies.' },
+      { label: 'Tendência Absorvente  (X < −0,2)', texto: 'Predominância de microporos e retenção hídrica. Retém água por mais tempo — favorável a espécies exigentes, mas com risco de saturação prolongada e menor difusão de oxigênio.' },
+    ],
+    note: 'O eixo X é influenciado diretamente pela proporção e granulometria dos materiais drenantes (Q1, Q4) em relação aos absorventes (Q2, Q3). Ajustes na granulometria e proporção dos componentes movem o baricentro ao longo deste eixo.',
+  },
+  fisicoquimica: {
+    color: '#6ab4e8', bg: 'rgba(106,180,232,.12)',
+    tag:   'Natureza Físico-Química',
+    title: 'Composição mineral e orgânica do substrato',
+    body: ['A natureza físico-química é determinada pela posição do baricentro no eixo Y e representa o balanço entre componentes minerais (Q1, Q2) e orgânicos (Q3, Q4).'],
+    variacoes: [
+      { label: 'Predominância Mineral  (Y > 0,2)',        texto: 'Estrutura dominada por componentes minerais. Alta estabilidade estrutural esperada, com baixa transformação por decomposição.' },
+      { label: 'Balanço Mineral-Orgânico  (−0,2 ≤ Y ≤ 0,2)', texto: 'Mistura equilibrada entre frações minerais e orgânicas. Combina estabilidade estrutural com boa capacidade de retenção hídrica e atividade biológica moderada.' },
+      { label: 'Predominância Orgânica  (Y < −0,2)',      texto: 'Maior proporção de componentes orgânicos. Favorece retenção hídrica e atividade biológica, mas implica maior transformação estrutural ao longo do tempo.' },
+    ],
+    note: 'O eixo Y é definido pelos quadrantes presentes: Q1 e Q2 puxam para o lado mineral (Y positivo); Q3 e Q4 puxam para o lado orgânico (Y negativo).',
+  },
+  trg: {
+    color: '#e8c96a', bg: 'rgba(232,201,106,.12)',
+    tag:   'TRG — Tendência Relativa Granulométrica',
+    title: 'Relação entre as granulometrias dos componentes',
+    body: ['A Tendência Relativa Granulométrica (TRG) é calculada pelo índice Ig = GA / GD, onde GA é a granulometria média ponderada dos absorventes e GD a dos drenantes. Indica se os materiais absorventes são proporcionalmente finos, equilibrados ou grossos em relação aos drenantes.'],
+    variacoes: [
+      { label: 'Absorventes Finos  (Ig < 0,7)',    texto: 'Os absorventes são finos em relação aos drenantes. Risco de preenchimento intergranular — os finos ocupam os espaços entre os grãos maiores, aumentando a retenção hídrica e comprometendo a drenagem.' },
+      { label: 'Equilíbrio Granulométrico  (0,7 ≤ Ig ≤ 1,3)', texto: 'As granulometrias dos materiais absorventes e drenantes são proporcionais. O substrato tende a apresentar comportamento hidráulico previsível e maior estabilidade estrutural.' },
+      { label: 'Absorventes Grossos  (Ig > 1,3)',  texto: 'Os absorventes são relativamente grossos. A retenção hídrica tende a se distribuir em poros maiores, com menor capilaridade efetiva e menor uniformidade de umedecimento.' },
+    ],
+    note: 'O Índice de Colapso Granulométrico (Icd) complementa a TRG: avalia se os materiais drenantes (Q1) são proporcionais aos absorventes (Q2) em escala de poro — Icd > 0,7 indica estrutura estável; 0,4–0,7 intermediária; abaixo de 0,4 há risco de colapso.',
+  },
+  degradabilidade: {
+    color: '#e87a6a', bg: 'rgba(232,122,106,.12)',
+    tag:   'Potencial de Degradabilidade',
+    title: 'Estabilidade estrutural ao longo do tempo',
+    body: ['O Potencial de Degradabilidade é calculado pelo índice Rd, baseado na proporção de componentes orgânicos. Indica o quanto a estrutura tende a se transformar ao longo do tempo por decomposição dos materiais orgânicos.'],
+    variacoes: [
+      { label: 'Baixa Degradabilidade  (Rd < 0,2)', texto: 'Fração orgânica pequena ou ausente. Alta estabilidade estrutural esperada, com transformações lentas e de baixo impacto nas propriedades do substrato.' },
+      { label: 'Transformação Gradual  (0,2 ≤ Rd ≤ 0,5)', texto: 'A fração orgânica pode se decompor ao longo do tempo, alterando progressivamente a estrutura. Recomenda-se monitorar compactação e drenagem em uso prolongado.' },
+      { label: 'Alta Transformação  (Rd > 0,5)',   texto: 'Grande fração orgânica presente. Transformação estrutural significativa esperada — risco de compactação progressiva, aumento de retenção hídrica e redução da aeração radicular.' },
+    ],
+    note: 'Q3 (absorvente orgânico) tem decomposição mais rápida e impacto imediato na estrutura. Q4 (drenante orgânico) se decompõe mais lentamente. O modelo diferencia os dois na composição do Rd.',
+  },
+  diagrama: {
+    color: '#e8c96a', bg: 'rgba(232,201,106,.12)',
+    tag:   'Diagrama Estrutural',
+    title: 'Como ler e usar o diagrama',
+    body: ['O Diagrama Estrutural mostra graficamente para onde cada componente "puxa" a mistura — e onde o substrato se posiciona no espaço hidráulico-estrutural. Após definir a composição, experimente alterar a granulometria dos componentes: isso pode mudar drasticamente o comportamento para uma mesma fórmula.'],
+    variacoes: [
+      { label: '★ B* — Baricentro Final (asterisco amarelo)', texto: 'O ponto mais importante do diagrama. Representa a tendência real de comportamento do substrato considerando composição, granulometria e degradabilidade juntos.' },
+      { label: '▲ Bs — Triângulo roxo',   texto: 'Baricentro de composição pura — mostra a natureza dos componentes sem considerar granulometria. Reflete apenas as proporções e os quadrantes dos ingredientes.' },
+      { label: '● B — Círculo branco',    texto: 'Baricentro bruto — tendência das quantidades ponderadas por percentual. Ponto de partida antes de qualquer correção granulométrica.' },
+      { label: '■ Bg — Quadrado azul',    texto: 'Baricentro granulométrico — mostra a tendência após aplicar a correção de granulometria (índice Ig). Revela como o tamanho das partículas desloca o comportamento hidráulico.' },
+    ],
+    note: 'Você pode arrastar os pontos dos vetores no diagrama para ajustes finos de granulometria interativamente — observe como B* se desloca em tempo real.',
+  },
+  componentes: {
+    color: '#6fcf7a', bg: 'rgba(111,207,122,.12)',
+    tag:   'Entrada de Componentes',
+    title: 'Como preencher a lista de componentes',
+    body: ['Você pode adicionar quantos componentes quiser e de qualquer combinação de quadrantes — inclusive formulações com apenas um quadrante. Se um mesmo material tem diferentes granulometrias (por exemplo, pó + grão), adicione-o como duas entradas separadas. Isso permite avaliar como a distribuição granulométrica interna afeta o comportamento do substrato.'],
+    variacoes: [
+      { label: 'Nome',               texto: 'Livre — use o nome que preferir. Pode ser o nome comercial ou técnico. Clique no nome para editar.' },
+      { label: 'Porcentagem (%)',    texto: 'Proporção em volume na mistura. A soma deve chegar a 100%. Se estiver diferente, o modelo ajusta automaticamente o componente de maior percentual ao clicar em Calcular.' },
+      { label: 'Classe (Quadrante)', texto: 'Define o comportamento estrutural — Q1 (drenante mineral), Q2 (absorvente mineral), Q3 (absorvente orgânico) ou Q4 (drenante orgânico). Clique nos quadrantes acima para entender cada classe.' },
+      { label: 'Granulometria (mm)', texto: 'Tamanho médio da partícula em milímetros. Usada para calcular Ig e Icd. Se pulverizado ou desconhecido, use 0,1 mm — o modelo aceita sem prejuízo ao cálculo.' },
+    ],
+    note: 'Clique nos quadrantes Q1–Q4 acima para entender o comportamento estrutural de cada classe antes de classificar seus componentes.',
+  },
+  sensibilidade: {
+    color: '#6ab4e8', bg: 'rgba(106,180,232,.12)',
+    tag:   'Análise de Sensibilidade',
+    title: 'Como usar a tabela para corrigir sua mistura',
+    body: ['A Análise de Sensibilidade simula o efeito de adicionar +10% de cada componente ao volume total. Os valores ΔX e ΔY mostram para onde o baricentro B* se deslocaria. Na prática: se você tem 1 litro de substrato formulado e adiciona 0,1 L de um componente, o deslocamento previsto na tabela representa o efeito esperado na estrutura.'],
+    variacoes: [
+      { label: 'ΔX positivo → mais drenante',   texto: 'Adicionar mais deste componente desloca o substrato para o lado drenante. Use quando quiser aumentar a aeração, reduzir o tempo de saturação ou corrigir um substrato excessivamente absorvente.' },
+      { label: 'ΔX negativo → mais absorvente',  texto: 'Adicionar mais deste componente aumenta a retenção hídrica. Use quando o substrato estiver drenando rápido demais ou quando a espécie exigir maior umidade disponível.' },
+      { label: 'ΔY positivo → mais mineral',    texto: 'O componente puxa a estrutura para o lado mineral, aumentando a estabilidade e reduzindo a degradabilidade ao longo do tempo.' },
+      { label: 'ΔY negativo → mais orgânico',   texto: 'O componente aumenta a fração orgânica, favorecendo atividade biológica e retenção, mas reduzindo estabilidade estrutural de longo prazo.' },
+    ],
+    note: 'A coluna Influência mostra a magnitude total do deslocamento (|ΔX| + |ΔY|). Componentes com maior influência são os mais eficazes para corrigir a formulação. Componentes com influência baixa têm efeito marginal mesmo em volumes maiores.',
+  },
+};
+}
+function openInterpPopup(key) {
+  const d = getInterpPopupData()[key];
+  if (!d) return;
+  const content = document.getElementById('qPopupContent');
+  const vars = d.variacoes.map(v => `
+    <div style="margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:5px;border-left:2px solid ${d.color}44">
+      <div style="font-size:9px;color:${d.color};letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${v.label}</div>
+      <div style="font-size:10.5px;color:var(--text);line-height:1.65">${v.texto}</div>
+    </div>`).join('');
+  content.innerHTML = `
+    <div class="q-popup-tag" style="background:${d.bg};color:${d.color};border:1px solid ${d.color}44">${d.tag}</div>
+    <h2>${d.title}</h2>
+    ${d.body.map(p => `<p>${p}</p>`).join('')}
+    <div class="pop-divider"></div>
+    ${vars}
+    <div class="pop-note">${d.note}</div>
+  `;
+  document.getElementById('qPopupOverlay').classList.add('open');
+  document.addEventListener('keydown', handleEsc);
+}
+function toggleSection(bodyId, chevronId) {
+  const body = document.getElementById(bodyId);
+  const chev = document.getElementById(chevronId);
+  const header = chev ? chev.closest('.collapsible-header') : null;
+  const isOpen = body.classList.toggle('open');
+  chev.classList.toggle('open', isOpen);
+  if (header) header.classList.toggle('open', isOpen);
+}
+let _isDragging = false;
+
+function $ra(){return document.getElementById('resultsArea');}
+let _liveRecalcTimer=null;
+function liveRecalcDebounced(){
+  clearTimeout(_liveRecalcTimer);
+  _liveRecalcTimer=setTimeout(liveRecalc,120);
+}
+
+function liveRecalc(){
+  const valid = ingredients.filter(i=>i.pct!=null&&!isNaN(i.pct));
+  if(valid.length<1) return;
+  const total=valid.reduce((s,i)=>s+i.pct,0);
+  // Com múltiplos ingredientes exige total próximo de 100; com 1 ingrediente normaliza e roda
+  if(valid.length>1 && Math.abs(total-100)>2) return;
+  const normalized = valid.length===1
+    ? [{...valid[0], pct:100}]
+    : valid;
+  const m=computeModel(normalized);
+  renderResults(m,normalized);
+  if(_isDragging){
+    updateDiagram(m,normalized);
+    updateSensitivity(m,normalized);
+  } else {
+    drawDiagram(m,normalized);
+    setupChart1Drag(m,normalized);
+    updateSensitivity(m,normalized);
+  }
+}
+document.getElementById('btnCalc').onclick=()=>{
+  if(ingredients.length<1){alert('Insira pelo menos 1 componente.');return;}
+  const total=ingredients.reduce((s,i)=>s+i.pct,0);
+  if(total<=0){alert('Insira percentuais maiores que zero.');return;}
+  if(Math.abs(total-100)>0.01){
+    const diff=parseFloat((100-total).toFixed(4));
+    const maxIdx=ingredients.reduce((mi,ing,ii,arr)=>ing.pct>arr[mi].pct?ii:mi,0);
+    ingredients[maxIdx].pct=parseFloat((ingredients[maxIdx].pct+diff).toFixed(4));
+    renderIngredients();
+  }
+  const m=computeModel(ingredients);
+  document.getElementById('emptyState').classList.add('hidden');
+  $ra().classList.remove('hidden');
+  renderResults(m,ingredients);
+  requestAnimationFrame(()=>{
+    drawDiagram(m,ingredients);
+    setupChart1Drag(m,ingredients);
+    drawSensitivity(m,ingredients);
+  });
+  historySave(ingredients);
+};
+renderIngredients();
+function setLang() {
+  document.documentElement.lang = 'pt-BR';
+  document.getElementById('hTitle').textContent      = 'Modelo Estrutural de Substratos';
+  document.getElementById('hSub').textContent        = 'Componentes · Granulometria · Degradabilidade';
+  document.title                                     = 'Modelo Estrutural de Substratos';
+  const classesLabelEl = document.getElementById('classesLabelEl');
+  if(classesLabelEl) classesLabelEl.innerHTML = 'Classes Estruturais <span style="font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;font-weight:300">— clique para detalhes</span>';
+  document.getElementById('compLabelEl').textContent   = 'Componentes';
+  document.getElementById('colNameEl').textContent     = 'Componente';
+  document.getElementById('colClassEl').textContent    = 'Classe';
+  document.getElementById('colGranEl').textContent     = 'Gran.mm';
+  document.getElementById('btnAdd').textContent        = '+ adicionar componente';
+  document.getElementById('totalLabelEl').textContent  = 'Total';
+  document.getElementById('compoLabelEl').textContent  = 'Composição por Quadrante';
+  document.getElementById('btnCalc').textContent       = '▶ calcular modelo';
+  document.getElementById('btnPdf').textContent        = '⎙ salvar como PDF';
+  document.getElementById('histLabelEl').textContent   = 'Histórico — últimos 5 cálculos';
+  const he = document.querySelector('.history-empty');
+  if(he) he.textContent = 'nenhum cálculo ainda';
+  const eTitle = document.getElementById('emptyTitleEl');
+  const eSub   = document.getElementById('emptySubEl');
+  if(eTitle) eTitle.textContent = 'Insira componentes e calcule';
+  if(eSub)   eSub.textContent   = 'Os gráficos e análises aparecerão aqui';
+  document.getElementById('labelIdxCalc').textContent  = 'Índices Calculados';
+  document.getElementById('labelSens').textContent     = 'Análise de Sensibilidade';
+  document.getElementById('labelInterp').textContent   = 'Interpretação Estrutural';
+  document.getElementById('diagTitleEl').textContent   = 'Diagrama Estrutural';
+  document.getElementById('diagSubEl').textContent     = 'Vetores dos ingredientes · B → Bg → B*';
+  document.getElementById('sensTitleEl').textContent   = 'Campo de Sensibilidade (+10%)';
+  document.getElementById('sensSubEl').innerHTML       = 'Deslocamento de B* ao aumentar cada componente · <span style="color:var(--green-dim)">clique na seta para aplicar +10%</span>';
+  const compDetailEl = document.getElementById('compDetailLabelEl');
+  if(compDetailEl) compDetailEl.textContent = 'Composição Detalhada';
+  renderHistory();
+}
+const HISTORY_KEY = 'substrato_history_v1';
+const HISTORY_MAX = 5;
+function _storage() {
+  try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return localStorage; }
+  catch(e) { return sessionStorage; }
+}
+function historyLoad() {
+  try { return JSON.parse(_storage().getItem(HISTORY_KEY)) || []; }
+  catch(e) { return []; }
+}
+function historySave(ings) {
+  const list = historyLoad();
+  const now  = new Date();
+  const label= now.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})
+             + ' ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const top = [...ings].sort((a,b)=>b.pct-a.pct).slice(0,3)
+    .map(i=>`${i.pct.toFixed(0)}% ${i.name}`).join(' · ');
+  const qPcts = {Q1:0,Q2:0,Q3:0,Q4:0};
+  ings.forEach(i=>{ qPcts[i.q]=(qPcts[i.q]||0)+i.pct; });
+  const domQ = Object.entries(qPcts).sort((a,b)=>b[1]-a[1])[0][0];
+  const entry = { id: Date.now(), label, top, domQ, ings: JSON.parse(JSON.stringify(ings)) };
+  list.unshift(entry);
+  if(list.length > HISTORY_MAX) list.length = HISTORY_MAX;
+  _storage().setItem(HISTORY_KEY, JSON.stringify(list));
+  renderHistory();
+}
+function historyClear() {
+  _storage().removeItem(HISTORY_KEY);
+  renderHistory();
+}
+function historyDelete(id, e) {
+  e.stopPropagation();
+  const list = historyLoad().filter(h=>h.id!==id);
+  _storage().setItem(HISTORY_KEY, JSON.stringify(list));
+  renderHistory();
+}
+function historyRestore(ingsJson) {
+  ingredients = JSON.parse(ingsJson);
+  renderIngredients();
+  updateTotal();
+  const m = computeModel(ingredients);
+  document.getElementById('emptyState').classList.add('hidden');
+  $ra().classList.remove('hidden');
+  renderResults(m, ingredients);
+  drawDiagram(m, ingredients);
+  setupChart1Drag(m, ingredients);
+  drawSensitivity(m, ingredients);
+}
+function renderHistory() {
+  const list = historyLoad();
+  const el   = document.getElementById('historyList');
+  const btn = document.getElementById('btnHistClear');
+  if(!list.length){ el.innerHTML=`<div class="history-empty">nenhum cálculo ainda</div>`; if(btn) btn.style.display='none'; return; }
+  if(btn) btn.style.display='block';
+  el.innerHTML = list.map(h=>`
+    <div class="history-item" onclick="historyRestore(this.dataset.ings)" data-ings='${JSON.stringify(h.ings).replace(/'/g,"&#39;")}'>
+      <div class="history-dot" style="background:${QCOLORS[h.domQ]}"></div>
+      <div class="history-info">
+        <div class="history-name">${h.top}</div>
+        <div class="history-meta">${h.label} · ${h.ings.length} comp.</div>
+      </div>
+      <div class="history-actions">
+        <span class="history-restore">↺</span>
+        <span class="history-del" onclick="historyDelete(${h.id},event)" title="remover">×</span>
+      </div>
+    </div>`).join('');
+}
+renderHistory();
+setLang('pt');
+function openSobrePopup() {
+  const el = document.getElementById('sobrePopupOverlay');
+  el.style.display = 'flex';
+  document.addEventListener('keydown', _sobreEsc);
+}
+function closeSobrePopup() {
+  document.getElementById('sobrePopupOverlay').style.display = 'none';
+  document.removeEventListener('keydown', _sobreEsc);
+}
+function _sobreEsc(e) { if (e.key === 'Escape') closeSobrePopup(); }
+document.getElementById('btnPdf').onclick=()=>{
+  if($ra().classList.contains('hidden')){
+    alert('Calcule o modelo primeiro.');return;
+  }
+  // Garantir que análise de sensibilidade está aberta antes de imprimir
+  const sw = document.getElementById('sensTableWrap');
+  const sc = document.getElementById('chevronSens');
+  if(sw && !sw.classList.contains('open')){
+    sw.classList.add('open');
+    if(sc) sc.classList.add('open');
+  }
+  window.print();
+};</script><!-- Popup overlay — fora de qualquer contexto de stacking --><div class="q-popup-overlay" id="qPopupOverlay" onclick="closePopupOutside(event)"><div class="q-popup" id="qPopup"><button class="q-popup-close" onclick="closePopup()">×</button><div id="qPopupContent"></div></div></div><!-- ── SOBRE O MODELO POPUP ───────────────────────────────────────────────── --><div id="sobrePopupOverlay" onclick="closeSobrePopup()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box"><div onclick="event.stopPropagation()" style="background:#111811;border:1px solid #253025;border-radius:10px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:28px 28px 24px;position:relative;font-family:'DM Mono',monospace"><button onclick="closeSobrePopup()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#4a5a4a;font-size:18px;cursor:pointer;line-height:1" title="Fechar">✕</button><!-- Author card --><div style="display:flex;gap:18px;align-items:center;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid #253025"><img src="foto_joao.png" alt="João Giovanni" style="width:144px;height:144px;border-radius:50%;object-fit:cover;border:2px solid #2a4a2a;flex-shrink:0"><div><div style="font-family:'Fraunces',serif;font-size:16px;font-weight:400;color:#cdd4cd;margin-bottom:3px">João Giovanni</div><div style="font-size:10px;color:#6fcf7a;letter-spacing:.5px;margin-bottom:4px">Engenheiro Agrônomo · Entusiasta da arte do bonsai</div><div style="font-size:9.5px;color:#7a8a7a;line-height:1.55">Especialista em plantas ornamentais e estresse vegetal<br>Escola Superior de Agricultura Luiz de Queiroz (ESALQ) — Universidade de São Paulo (USP) — Brasil</div></div></div><!-- Title --><div style="font-family:'Fraunces',serif;font-size:15px;font-weight:300;color:#cdd4cd;margin-bottom:14px">Sobre o Modelo Estrutural de Substratos</div><!-- Body text --><div style="font-size:10.5px;color:#9aaa9a;line-height:1.75;display:flex;flex-direction:column;gap:12px"><p style="margin:0">O Modelo Estrutural de Substratos foi desenvolvido pelo Engenheiro Agrônomo João Giovanni com o objetivo de facilitar a compreensão de relações físico-químicas presentes em misturas de substratos utilizadas no cultivo de plantas.</p><p style="margin:0">O comportamento de um substrato pode ser descrito de forma mais completa em um espaço multidimensional. Nesse espaço, diferentes propriedades dos componentes podem ser representadas como variáveis ou vetores estruturais. Entre essas propriedades estão granulometria, degradabilidade, reatividade química, pH, capacidade de troca catiônica e outras características que influenciam o funcionamento físico e químico da mistura.</p><p style="margin:0">O modelo apresentado neste relatório constitui uma simplificação desse sistema mais amplo. A abordagem utilizada concentra a análise nos vetores estruturais relacionados à drenagem, retenção hídrica e natureza mineral ou orgânica dos componentes. A partir da interação entre esses vetores, o modelo identifica tendências estruturais do substrato e permite visualizar como diferentes ingredientes influenciam o comportamento da mistura.</p><p style="margin:0">Essa representação tem caráter didático e busca tornar mais acessível a interpretação da estrutura do substrato para cultivadores e colecionadores de plantas. Isso é particularmente relevante no cultivo de bonsai, no qual o desempenho do substrato exerce influência direta sobre a aeração radicular, a disponibilidade de água e a estabilidade estrutural da mistura.</p><p style="margin:0;padding:10px 14px;background:rgba(111,207,122,.07);border-left:2px solid #6fcf7a44;border-radius:4px;color:#8a9a8a">O modelo é disponibilizado como uma ferramenta gratuita com finalidade educativa. Seu objetivo é apoiar a compreensão e o aprimoramento de formulações de substrato por pessoas interessadas no cultivo técnico de plantas.</p></div><!-- Footer links --><div style="margin-top:20px;padding-top:14px;border-top:1px solid #253025;display:flex;gap:16px;flex-wrap:wrap;font-size:9px;color:#4a5a4a;letter-spacing:.5px"><span>🌿 www.cultivoornamental.com.br</span><span>📸 @joao.giovanni90</span><span>📱 (19) 99758-3777</span></div></div></div></body></html>
