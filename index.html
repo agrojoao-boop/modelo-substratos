@@ -1,0 +1,2492 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=1024, initial-scale=0.4, minimum-scale=0.2, maximum-scale=4.0, user-scalable=yes"><title>Modelo Estrutural de Substratos</title><script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><style>@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap');
+:root {
+ --bg: #0c0e0c;
+ --surface: #131513;
+ --card: #181b18;
+ --border: #252a25;
+ --green: #6fcf7a;
+ --green-dim: #3d6b43;
+ --amber: #e8c96a;
+ --red: #e87a6a;
+ --blue: #6ab4e8;
+ --text: #cdd4cd;
+ --text-dim: #6a7a6a;
+ --radius: 7px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background:var(--bg); color:var(--text); font-family:'DM Mono',monospace; font-size:12px; line-height:1.6; height:100vh; overflow:hidden; }
+header { border-bottom:1px solid var(--border); padding:16px 28px; display:flex; align-items:baseline; gap:16px; }
+header h1 { font-family:'Fraunces',serif; font-size:19px; font-weight:300; color:#fff; }
+header span { color:var(--text-dim); font-size:10px; letter-spacing:2px; text-transform:uppercase; }
+.layout { display:grid; grid-template-columns:320px 1fr; height:calc(100vh - 53px); }
+.sidebar { border-right:1px solid var(--border); display:flex; flex-direction:column; overflow-y:auto; height:calc(100vh - 53px); position:sticky; top:0; }
+.sidebar-section { padding:18px 18px 14px; border-bottom:1px solid var(--border); }
+.section-label { font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:9px; }
+.col-headers { display:grid; grid-template-columns:44px minmax(0,1fr) 44px 38px 18px; gap:5px; padding:0 8px; margin-bottom:4px; }
+.col-header { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); }
+.ingredient-list { display:flex; flex-direction:column; gap:5px; }
+.ingredient-row { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:7px 8px; display:grid; grid-template-columns:44px minmax(0,1fr) 44px 38px 18px; gap:5px; align-items:center; transition:border-color .15s; }
+.ingredient-row:hover { border-color:var(--green-dim); }
+.ingredient-row input, .ingredient-row select { background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--text); font-family:'DM Mono',monospace; font-size:11px; padding:2px 3px; outline:none; width:100%; transition:border-color .15s; }
+.ingredient-row input:focus, .ingredient-row select:focus { border-bottom-color:var(--green); }
+.ingredient-row input[type="number"] { text-align:right; }
+.ingredient-row input.pct-input { width:44px !important; border-bottom:1px solid var(--border) !important; }
+select option { background:#181b18; }
+.btn-remove { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; line-height:1; padding:1px; transition:color .15s; }
+.btn-remove:hover { color:var(--red); }
+.btn-add { background:none; border:1px dashed var(--border); border-radius:var(--radius); color:var(--text-dim); cursor:pointer; font-family:'DM Mono',monospace; font-size:11px; padding:6px; width:100%; transition:all .15s; letter-spacing:1px; margin-top:6px; }
+.btn-add:hover { border-color:var(--green); color:var(--green); }
+.total-row { display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); margin-top:8px; }
+.total-ok { color:var(--green); }
+.total-warn { color:var(--red); }
+.btn-calc { display:block; background:var(--green); border:none; border-radius:var(--radius); color:#0a1a0c; cursor:pointer; font-family:'DM Mono',monospace; font-size:11px; font-weight:500; letter-spacing:2px; text-transform:uppercase; padding:11px; width:calc(100% - 36px); margin:12px 18px 0; transition:all .15s; }
+.btn-calc:hover { background:#8de898; }
+.btn-pdf { display:block; background:transparent; border:1px solid var(--green-dim); border-radius:var(--radius); color:var(--green); cursor:pointer; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; padding:9px; width:calc(100% - 36px); margin:6px 18px 12px; transition:all .15s; }
+.btn-pdf:hover { background:var(--green-dim); color:#fff; }
+.history-section { padding:0 18px 14px; }
+.history-section-label { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
+.history-empty { font-size:10px; color:var(--text-dim); padding:8px 0; text-align:center; letter-spacing:.5px; }
+.history-item {
+ display:flex; align-items:center; gap:8px;
+ padding:7px 10px; margin-bottom:4px;
+ background:var(--surface); border:1px solid var(--border);
+ border-radius:var(--radius); cursor:pointer;
+ transition:border-color .15s, background .15s;
+}
+.history-item:hover { border-color:var(--green-dim); background:#161a16; }
+.history-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.history-info { flex:1; min-width:0; }
+.history-name { font-size:10px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.history-meta { font-size:9px; color:var(--text-dim); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.history-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.history-restore { font-size:9px; color:var(--green-dim); letter-spacing:.5px; }
+.history-item:hover .history-restore { color:var(--green); }
+.history-del { font-size:11px; color:var(--text-dim); line-height:1; opacity:0; transition:opacity .15s; padding:0 2px; }
+.history-item:hover .history-del { opacity:.6; }
+.history-del:hover { opacity:1 !important; color:#e87a6a !important; }
+.pdf-header { display:none; background:#fff; color:#111; padding:16px 24px 12px; border-bottom:2px solid #1a5c2e; }
+.pdf-header-top { display:flex; justify-content:space-between; align-items:flex-start; }
+.pdf-header-name { font-size:15px; font-weight:700; color:#1a3d2b; }
+.pdf-header-site { font-size:11px; color:#1a5c2e; font-weight:600; margin-top:2px; }
+.pdf-header-details { font-size:10px; color:#444; margin-top:8px; display:flex; gap:24px; flex-wrap:wrap; }
+.pdf-header-right { text-align:right; font-size:10px; color:#555; }
+@page { size:A4 landscape; margin:12mm 14mm; }
+.pdf-only { display: none; }
+@media print {
+ @page { size: A4 portrait; margin: 12mm 14mm 14mm 14mm; }
+ * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+ .sidebar, .btn-calc, .btn-pdf, header, .empty-state,
+ .pdf-parecer, .pdf-interp, .pdf-influence,
+ .results-grid, #summaryCards,
+ .chart-sub { display: none !important; }
+ body { background: #fff !important; color: #111 !important;
+ font-family: 'DM Mono', monospace; font-size: 9pt; }
+ .main { margin: 0 !important; padding: 0 !important; }
+ .layout { display: block !important; }
+ #resultsArea { display: block !important; padding: 0 !important; }
+ #pdfCabecalho {
+ display: block !important;
+ background: #1a3d2b !important;
+ color: #fff !important;
+ padding: 10px 14px 8px 14px;
+ margin-bottom: 10px;
+ border-radius: 4px;
+ }
+ #pdfCabecalho .cab-title {
+ font-size: 15pt; font-weight: 300; font-family: 'Fraunces', serif; color: #fff; letter-spacing: -.3px;
+ }
+ #pdfCabecalho .cab-sub {
+ font-size: 8pt; color: #9fcfac; margin-top: 2px; font-family: 'DM Mono', monospace; letter-spacing: 1.5px; text-transform: uppercase;
+ }
+ #pdfCabecalho .cab-info {
+ font-size: 7.5pt; color: #cde8d4; margin-top: 6px;
+ display: flex; justify-content: space-between; align-items: flex-end;
+ }
+ #pdfCabecalho .cab-right { text-align: right; }
+ .interp-card { background: #f5f5f5 !important; border: 1px solid #ccc !important;
+ border-radius: 4px; padding: 10px 12px; margin-bottom: 8px; }
+ .interp-card h3 { font-size: 9pt; color: #1a3d2b !important; margin-bottom: 6px; }
+ .interp-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px; }
+ .interp-item { background: #fff !important; border: 1px solid #ddd !important;
+ border-radius: 3px; padding: 7px 9px; }
+ .ilabel { font-size: 7pt; color: #666 !important; text-transform: uppercase;
+ letter-spacing: .5px; margin-bottom: 3px; }
+ .ivalue { font-size: 9.5pt !important; color: #111 !important; font-weight: 600; }
+ .results-grid { display: grid !important; grid-template-columns: repeat(3,1fr) !important;
+ gap: 6px; margin-bottom: 8px; }
+ .result-card { background: #f9f9f9 !important; border: 1px solid #ddd !important;
+ border-radius: 3px; padding: 6px 8px; }
+ .result-card .rc-label { font-size: 7pt; color: #888 !important; }
+ .result-card .rc-value { font-size: 10pt; font-weight: 700; color: #1a3d2b !important; }
+ .result-card .rc-sub { font-size: 7pt; color: #666 !important; }
+ .charts-row { display: grid !important; grid-template-columns: 1fr 1fr !important;
+ gap: 10px; margin-bottom: 8px; break-inside: avoid; }
+ .chart-card { background: #f9f9f9 !important; border: 1px solid #ddd !important;
+ border-radius: 3px; padding: 8px; break-inside: avoid; }
+ .chart-card h3 { font-size: 8.5pt; color: #1a3d2b !important; margin-bottom: 4px; }
+ .chart-wrap { height: 180px !important; }
+ .chart-wrap canvas { max-width: 100% !important; max-height: 100% !important; }
+ .section-label { font-size: 8pt; font-weight: 700; color: #1a3d2b !important;
+ text-transform: uppercase; letter-spacing: 1px;
+ border-bottom: 1.5px solid #1a3d2b; padding-bottom: 3px;
+ margin: 10px 0 6px 0; }
+ .index-list table, .sens-table table, .calc-table table {
+ width: 100% !important; border-collapse: collapse !important;
+ font-size: 8.5pt !important;
+ }
+ .index-list th, .sens-table th, .calc-table th {
+ background: #1a3d2b !important; color: #9fcfac !important;
+ font-size: 7.5pt; padding: 4px 5px; text-align: left;
+ }
+ .index-list td, .sens-table td, .calc-table td {
+ padding: 3.5px 5px; border-bottom: .5px solid #e0e0e0;
+ color: #111 !important; background: #fff !important;
+ }
+ .index-list tr:nth-child(even) td,
+ .sens-table tr:nth-child(even) td,
+ .calc-table tr:nth-child(even) td { background: #f7f7f7 !important; }
+ .qtag { border-radius: 2px; padding: 1px 4px; font-size: 7pt; font-weight: 700; }
+ .bar-bg { background: #e8e8e8 !important; height: 5px !important; border-radius: 2px; display:inline-block; vertical-align:middle; }
+ .bar-fill { height: 100% !important; border-radius: 2px; }
+ .pdf-only {
+ display: block !important;
+ margin-bottom: 8px;
+ }
+ .calc-table { background: #fff !important; border: 1px solid #ccc !important; border-radius: 3px; overflow: hidden; }
+ .calc-table table { width: 100% !important; border-collapse: collapse !important; font-size: 8.5pt !important; }
+ .calc-table th { background: #1a3d2b !important; color: #9fcfac !important; font-size: 7.5pt; padding: 4px 6px; text-align: left; }
+ .calc-table td { padding: 3.5px 6px; border-bottom: .5px solid #e0e0e0; color: #111 !important; background: #fff !important; }
+ .calc-table tr:nth-child(even) td { background: #f7f7f7 !important; }
+ #pdfAviso {
+ display: block !important;
+ margin-top: 14px;
+ border-top: 1px solid #ccc;
+ padding-top: 8px;
+ font-size: 7pt;
+ color: #888 !important;
+ line-height: 1.5;
+ }
+ .charts-row { page-break-inside: avoid; }
+ .interp-card { page-break-inside: avoid; }
+ .chart-legend { display: flex !important; flex-wrap: wrap !important; gap: 4px 10px !important; margin-top: 6px !important; padding-top: 6px !important; border-top: 1px solid #ccc !important; }
+ .chart-legend-item { font-size: 7pt !important; color: #111 !important; display: flex !important; align-items: center !important; gap: 4px !important; }
+ .legend-dot { width: 8px !important; height: 8px !important; border-radius: 50% !important; flex-shrink: 0; }
+ .legend-line { width: 16px !important; height: 2px !important; flex-shrink: 0; }
+ /* Ocultar Índices Calculados no PDF */
+ #calcSection { display: none !important; }
+ /* Forçar Análise de Sensibilidade aberta no PDF */
+ #sensTableWrap { display: block !important; max-height: none !important; opacity: 1 !important; padding: 8px !important; }
+ #sensTableWrap .sens-table { display: block !important; }
+ .collapsible-header { display: block !important; }
+ #chevronSens, #chevronInterp, #chevronCalc { display: none !important; }
+ .q-info-btn { display: none !important; }
+}
+.info-panel { padding:14px 18px; border-bottom:1px solid var(--border); }
+.quadrant-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px; margin-top:7px; }
+.q-cell { border-radius:5px; padding:6px 9px; font-size:10px; line-height:1; display:flex; align-items:center; justify-content:space-between; min-height:28px; background:transparent; border:none; cursor:pointer; transition:background .15s; }
+.q-cell:hover { background:rgba(255,255,255,.04); }
+.q-cell strong { display:block; font-size:10px; margin-bottom:0; font-weight:500; letter-spacing:.2px; }
+.q1c {} .q2c {} .q3c {} .q4c {}
+.index-list { display:flex; flex-direction:column; gap:5px; }
+.index-row { display:flex; gap:8px; align-items:flex-start; padding:7px 10px; background:var(--surface); border-radius:5px; border-left:3px solid; font-size:11px; }
+.idx-name { color:var(--text-dim); font-size:9px; }
+.idx-val { font-size:14px; font-family:'Fraunces',serif; color:#fff; }
+.idx-desc { color:var(--text-dim); font-size:9px; margin-top:1px; }
+.bar-bg { background:var(--surface); border-radius:3px; height:5px; overflow:hidden; display:inline-block; vertical-align:middle; }
+.bar-fill { height:100%; border-radius:3px; transition:width .3s; }
+.main { padding:22px 26px; display:flex; flex-direction:column; gap:20px; overflow-y:auto; }
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 40px; color:var(--text-dim); gap:10px; text-align:center; }
+.empty-state .icon { font-size:40px; opacity:.3; }
+.hidden { display:none; }
+.results-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+.result-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; }
+.result-card .rlabel { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:5px; }
+.result-card .rcoords { font-family:'Fraunces',serif; font-size:16px; color:#fff; }
+.result-card .rsub { font-size:9px; color:var(--text-dim); margin-top:3px; line-height:1.4; }
+.qtag { display:inline-block; padding:2px 7px; border-radius:4px; font-size:9px; margin-top:5px; letter-spacing:1px; text-transform:uppercase; }
+.charts-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.chart-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px 18px 14px; }
+.chart-card h3 { font-family:'Fraunces',serif; font-weight:300; font-size:13px; color:var(--text); margin-bottom:3px; }
+.chart-sub { font-size:10px; color:var(--text-dim); margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+.chart-wrap { position:relative; height:540px; }
+.chart-wrap canvas { position:absolute; top:0; left:0; width:100%!important; height:100%!important; }
+.chart-legend { margin-top:12px; display:flex; flex-wrap:wrap; gap:5px 12px; border-top:1px solid var(--border); padding-top:10px; }
+.legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-dim); }
+.legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.legend-line { width:14px; height:2px; flex-shrink:0; }
+.calc-table { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.calc-table table { width:100%; border-collapse:collapse; }
+.calc-table th { background:var(--surface); color:var(--text-dim); font-size:9px; letter-spacing:1.5px; text-transform:uppercase; padding:8px 11px; text-align:left; border-bottom:1px solid var(--border); }
+.calc-table td { padding:8px 11px; border-bottom:1px solid var(--border); font-size:11px; }
+.calc-table tr:last-child td { border-bottom:none; }
+.interp-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:0; }
+.interp-card h3 { font-family:'Fraunces',serif; font-weight:300; font-size:13px; color:var(--text); margin-bottom:12px; }
+.interp-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.interp-item { padding:9px 11px; background:var(--surface); border-radius:6px; border-left:3px solid; }
+.interp-item .ilabel { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:3px; }
+.interp-item .ivalue { color:var(--text); font-size:11px; }
+.sens-table { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.sens-table table { width:100%; border-collapse:collapse; }
+.sens-table th { background:var(--surface); color:var(--text-dim); font-size:9px; letter-spacing:1.5px; text-transform:uppercase; padding:8px 11px; text-align:left; border-bottom:1px solid var(--border); }
+.sens-table td { padding:8px 11px; border-bottom:1px solid var(--border); font-size:11px; }
+.sens-table tr:last-child td { border-bottom:none; }
+.calc-table.index-list, .index-list { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; padding:4px 0; }
+.collapsible-header {
+ display:flex; align-items:center; justify-content:space-between;
+ cursor:pointer; user-select:none;
+ background:var(--card); border:1px solid var(--border);
+ border-radius:var(--radius); padding:11px 16px;
+ transition:border-color .15s, background .15s;
+}
+.collapsible-header:hover { border-color:var(--green-dim); background:#161a16; }
+.collapsible-header.open { border-color:var(--green-dim); border-bottom-left-radius:0; border-bottom-right-radius:0; border-bottom-color:transparent; }
+.collapsible-header .section-label { margin-bottom:0; font-size:10px; letter-spacing:2px; color:var(--text); }
+.collapsible-chevron {
+ font-size:11px; color:var(--text-dim); transition:transform .2s; flex-shrink:0;
+}
+.collapsible-chevron.open { transform:rotate(180deg); color:var(--green); }
+.collapsible-body {
+ overflow:hidden; transition:max-height .28s ease, opacity .2s ease;
+ max-height:0; opacity:0;
+ background:var(--card); border:1px solid var(--green-dim);
+ border-top:none; border-radius:0 0 var(--radius) var(--radius);
+ padding:0 1px;
+}
+.collapsible-body.open { max-height:2000px; opacity:1; padding:8px; }
+.index-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:6px 0 2px; }
+.index-grid .index-row { margin:0; }
+.pdf-parecer { display:none !important; }
+.parecer-header { display:flex; align-items:baseline; gap:12px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+.parecer-title { font-family:'Fraunces',serif; font-size:14px; color:var(--text); }
+.parecer-sub { font-size:10px; color:var(--text-dim); font-style:italic; }
+.parecer-body { position:relative; }
+.pdf-parecer textarea { width:100%; box-sizing:border-box; min-height:120px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text); font-family:'DM Mono',monospace; font-size:12px; line-height:2.0; padding:10px 12px; resize:vertical; outline:none; transition:border-color .15s; }
+.pdf-parecer textarea:focus { border-color:var(--green); background:#0d170d; }
+.parecer-hint { font-size:9px; color:var(--text-dim); margin-top:5px; text-align:right; letter-spacing:.5px; }
+.parecer-footer { display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid var(--border); font-size:10px; color:var(--text-dim); }
+.parecer-date { font-size:9px; color:var(--text-dim); }
+.q-cell { cursor:pointer; position:relative; transition:opacity .15s; }
+.q-cell:hover { opacity:.85; }
+.q-info-btn {
+ position:absolute; top:5px; right:7px;
+ width:14px; height:14px; border-radius:50%;
+ background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.13);
+ color:rgba(255,255,255,.35); font-size:9px; line-height:14px; text-align:center;
+ cursor:pointer; font-family:'DM Mono',monospace; font-weight:500;
+ transition:all .15s; user-select:none; flex-shrink:0;
+}
+.q-cell:hover .q-info-btn { color:rgba(255,255,255,.7); background:rgba(255,255,255,.12); }
+.q-popup-overlay {
+ display:none; position:fixed; inset:0; z-index:9999;
+ background:rgba(0,0,0,.55); backdrop-filter:blur(3px);
+ align-items:center; justify-content:center;
+}
+.q-popup-overlay.open { display:flex; }
+.q-popup {
+ background:#151915; border:1px solid var(--border);
+ border-radius:10px; padding:26px 28px 22px;
+ max-width:480px; width:calc(100% - 40px);
+ max-height:90vh; overflow-y:auto;
+ box-shadow:0 24px 60px rgba(0,0,0,.7);
+ position:relative; animation:popIn .18s ease;
+}
+@keyframes popIn {
+ from { opacity:0; transform:scale(.96) translateY(6px); }
+ to { opacity:1; transform:scale(1) translateY(0); }
+}
+.q-popup-tag {
+ display:inline-block; font-size:9px; letter-spacing:2px;
+ text-transform:uppercase; padding:3px 9px; border-radius:20px;
+ font-family:'DM Mono',monospace; margin-bottom:10px; font-weight:500;
+}
+.q-popup h2 {
+ font-family:'Fraunces',serif; font-weight:300; font-size:18px;
+ color:#fff; margin-bottom:14px; line-height:1.3;
+}
+.q-popup p {
+ font-size:11.5px; line-height:1.75; color:var(--text);
+ font-family:'DM Mono',monospace; margin-bottom:10px;
+}
+.q-popup p:last-of-type { margin-bottom:0; }
+.q-popup .pop-divider {
+ height:1px; background:var(--border); margin:12px 0;
+}
+.q-popup .pop-examples {
+ font-size:10px; color:var(--text-dim); line-height:1.6;
+}
+.q-popup .pop-examples span { color:var(--text); }
+.q-popup-close {
+ position:absolute; top:14px; right:16px;
+ background:none; border:none; color:var(--text-dim);
+ font-size:18px; cursor:pointer; line-height:1;
+ transition:color .15s; padding:2px 4px;
+}
+.q-popup-close:hover { color:#fff; }
+.q-popup .pop-note {
+ margin-top:12px; padding:9px 12px;
+ background:rgba(255,255,255,.03); border-radius:6px;
+ border-left:3px solid var(--border);
+ font-size:10px; color:var(--text-dim); line-height:1.65;
+}
+@media print { .q-popup-overlay { display:none !important; } }
+.name-label {
+ font-family:'DM Mono',monospace; font-size:11px; color:var(--text);
+ padding:2px 3px; border-bottom:1px solid var(--border);
+ cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+ transition:border-color .15s; width:100%; max-width:100%; display:block;
+}
+.name-label:hover { border-bottom-color:var(--green-dim); color:#fff; }
+.name-edit-box {
+ position:absolute; top:-2px; left:0; z-index:200;
+ background:#1a1f1a; border:1px solid var(--green);
+ border-radius:6px; padding:5px 8px;
+ box-shadow:0 8px 24px rgba(0,0,0,.6);
+ width:200px;
+}
+.name-edit-input {
+ background:transparent; border:none; border-bottom:1px solid var(--green-dim);
+ color:var(--text); font-family:'DM Mono',monospace; font-size:11px;
+ padding:2px 3px; outline:none; width:100%;
+}
+.name-edit-input:focus { border-bottom-color:var(--green); color:var(--green); }</style></head><body><header><h1 id="hTitle">Modelo Estrutural de Substratos</h1><span id="hSub">Componentes · Granulometria · Degradabilidade</span><div style="margin-left:auto;display:flex;gap:6px;align-items:center"><button onclick="openSobrePopup()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;padding:4px 10px;border-radius:4px;cursor:pointer;transition:border-color .2s,color .2s" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">sobre o modelo</button></div></header><div class="pdf-header" id="pdfHeader"><div class="pdf-header-top"><div><div class="pdf-header-name">João Giovanni</div><div class="pdf-header-site">Engenheiro Agrônomo · Entusiasta da arte do bonsai</div><div style="font-size:10px;color:#444;margin-top:3px">Especialista em plantas ornamentais e estresse vegetal</div><div style="font-size:9.5px;color:#666;margin-top:1px">Escola Superior de Agricultura Luiz de Queiroz (ESALQ) — Universidade de São Paulo (USP) — Brasil</div><div class="pdf-header-details" style="margin-top:6px"><span>CREA-SP: 507-1573593</span><span>Instagram: @joao.giovanni90</span><span>Whatsapp: (19) 99758-3777</span><span>www.cultivoornamental.com.br</span></div></div><div class="pdf-header-right"><div style="font-size:13px;font-weight:700;color:#1a3d2b">Modelo Estrutural de Substratos</div><div id="pdfDate" style="margin-top:4px"></div></div></div></div><div class="layout"><!-- SIDEBAR --><div class="sidebar"><div class="info-panel"><div class="section-label" id="classesLabelEl">Classes Estruturais <span id="classesHintEl" style="font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;font-weight:300">— clique para detalhes</span></div><div class="quadrant-grid"><div class="q-cell q2c" onclick="openPopup('Q2')"><strong id="qLabel2" style="color:#6ab4e8">Q2 — Absorvente Mineral</strong><span class="q-info-btn">?</span></div><div class="q-cell q1c" onclick="openPopup('Q1')"><strong id="qLabel1" style="color:#6fcf7a">Q1 — Drenante Mineral</strong><span class="q-info-btn">?</span></div><div class="q-cell q3c" onclick="openPopup('Q3')"><strong id="qLabel3" style="color:#e87a6a">Q3 — Absorvente Orgânico</strong><span class="q-info-btn">?</span></div><div class="q-cell q4c" onclick="openPopup('Q4')"><strong id="qLabel4" style="color:#e8c96a">Q4 — Drenante Orgânico</strong><span class="q-info-btn">?</span></div></div></div><div class="sidebar-section"><div class="section-label" style="display:flex;align-items:center;justify-content:space-between"><span id="compLabelEl">Componentes</span><span class="q-info-btn" onclick="openInterpPopup('componentes')" style="position:static;flex-shrink:0">?</span></div><div class="col-headers"><span class="col-header">%</span><span class="col-header" id="colNameEl">Componente</span><span class="col-header" id="colClassEl">Classe</span><span class="col-header" id="colGranEl">Gran.mm</span><span></span></div><div class="ingredient-list" id="ingredientList"></div><button class="btn-add" id="btnAdd">+ adicionar componente</button><div class="total-row"><span style="color:var(--text-dim)" id="totalLabelEl">Total</span><span id="totalDisplay" class="total-warn">0%</span></div></div><div class="info-panel" id="sidebarCompo" style="display:none"><div class="section-label" id="compoLabelEl">Composição por Quadrante</div><div id="compoList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div></div><button class="btn-calc" id="btnCalc">▶ calcular modelo</button><button class="btn-pdf" id="btnPdf">⎙ salvar como PDF</button><div class="history-section"><div class="history-section-label" style="display:flex;align-items:center;justify-content:space-between"><span id="histLabelEl">Histórico — últimos 5 cálculos</span><button onclick="historyClear()" id="btnHistClear" style="background:none;border:none;color:var(--text-dim);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.5px;cursor:pointer;padding:0;transition:color .15s;display:none" onmouseover="this.style.color='#e87a6a'" onmouseout="this.style.color='var(--text-dim)'">limpar tudo</button></div><div id="historyList"><div class="history-empty">nenhum cálculo ainda</div></div></div></div><!-- MAIN --><div class="main"><div class="empty-state" id="emptyState"><div class="icon">⬡</div><div style="font-size:14px" id="emptyTitleEl">Insira componentes e calcule</div><div style="font-size:10px" id="emptySubEl">Os gráficos e análises aparecerão aqui</div></div><div id="resultsArea" class="hidden"><div id="pdfCabecalho" style="display:none"><div class="cab-title">Modelo Estrutural de Substratos</div><div class="cab-sub">Componentes &middot; Granulometria &middot; Degradabilidade</div><div class="cab-info"><div><strong>João Giovanni</strong><br>Engenheiro Agrônomo · Entusiasta da arte do bonsai<br>Especialista em plantas ornamentais e estresse vegetal<br>ESALQ — Universidade de São Paulo (USP) — Brasil<br>CREA-SP: 507-1573593</div><div class="cab-right">www.cultivoornamental.com.br<br>@joao.giovanni90 &nbsp;|&nbsp; (19) 99758-3777</div></div></div><div><div class="collapsible-header" onclick="toggleSection('interpCardWrap','chevronInterp')"><span class="section-label" style="margin:0" id="labelInterp">Interpretação Estrutural</span><span class="collapsible-chevron" id="chevronInterp">▾</span></div><div class="collapsible-body" id="interpCardWrap"><div class="interp-card" id="interpCard" style="border:none;border-radius:0;background:transparent;padding:8px 4px"></div></div></div><div class="pdf-parecer" id="pdfParecer"><div class="parecer-header"><span class="parecer-title">Parecer Agronômico</span><span class="parecer-sub">Observações técnicas · campo editável no PDF gerado</span></div><div class="parecer-body"><textarea id="parecerText" placeholder="Escreva observações iniciais aqui (opcional) — o PDF gerado terá um campo editável nessa área..." spellcheck="true"></textarea><div class="parecer-hint">O PDF gerado terá este espaço como campo editável</div></div></div><div class="results-grid" id="summaryCards"></div><div class="charts-row"><div class="chart-card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px"><h3 style="margin:0" id="diagTitleEl">Diagrama Estrutural</h3><span class="q-info-btn" onclick="openInterpPopup('diagrama')" style="position:static;flex-shrink:0">?</span></div><div class="chart-sub" id="diagSubEl">Vetores dos ingredientes · B → Bg → B*</div><div class="chart-wrap"><canvas id="chart1"></canvas></div><div class="chart-legend" id="legend1"></div></div><div class="chart-card"><h3 id="sensTitleEl">Campo de Sensibilidade (+10%)</h3><div class="chart-sub" id="sensSubEl">Deslocamento de B* ao aumentar cada componente · <span style="color:var(--green-dim)">clique na seta para aplicar +10%</span></div><div class="chart-wrap"><canvas id="chart2"></canvas></div><div class="chart-legend" id="legend2"></div></div></div><div id="calcSection"><div class="collapsible-header" onclick="toggleSection('calcTableWrap','chevronCalc')"><span class="section-label" style="margin:0" id="labelIdxCalc">Índices Calculados</span><span class="collapsible-chevron" id="chevronCalc">▾</span></div><div class="collapsible-body" id="calcTableWrap"><div class="index-grid" id="calcTable"></div></div></div><div class="pdf-only" id="pdfCompoBlock"><div class="section-label" id="compDetailLabelEl">Composição Detalhada</div><div class="calc-table" id="calcTableCompo"></div></div><div><div class="collapsible-header" onclick="toggleSection('sensTableWrap','chevronSens')"><span class="section-label" style="margin:0" id="labelSens">Análise de Sensibilidade</span><div style="display:flex;align-items:center;gap:8px"><span class="q-info-btn" onclick="event.stopPropagation();openInterpPopup('sensibilidade')" style="position:static;flex-shrink:0">?</span><span class="collapsible-chevron" id="chevronSens">▾</span></div></div><div class="collapsible-body" id="sensTableWrap"><div class="sens-table" id="sensTable" style="margin-top:6px"></div></div></div><div class="pdf-interp" id="pdfInterpBlock" style="display:none"></div><div class="pdf-influence" id="pdfInfluenceBlock" style="display:none"></div><div id="pdfAviso" style="display:none">
+Este modelo foi desenvolvido e disponibilizado gratuitamente pelo Eng. Agrônomo João Giovanni (CREA-SP: 507-1573593)
+como ferramenta de apoio técnico para formulação e análise de substratos.
+O autor não se responsabiliza pela reprodução, adaptação ou uso por terceiros sem autorização expressa.
+Os resultados são de natureza orientativa e não substituem o diagnóstico técnico presencial.
+Contato: www.cultivoornamental.com.br &nbsp;|&nbsp; @joao.giovanni90 &nbsp;|&nbsp; (19) 99758-3777
+</div></div></div></div><script>let ingredients = [
+  {pct:25, name:'A', q:'Q1', gran:2},
+  {pct:25, name:'B', q:'Q2', gran:3},
+  {pct:25, name:'C', q:'Q3', gran:0.1},
+  {pct:25, name:'D', q:'Q4', gran:2},
+];
+const QCOLORS={Q1:'#6fcf7a',Q2:'#6ab4e8',Q3:'#e87a6a',Q4:'#e8c96a'};
+const QBG    ={Q1:'#0f2018',Q2:'#0f1820',Q3:'#200f0f',Q4:'#201a0f'};
+const QBORD  ={Q1:'#1e4030',Q2:'#1e3040',Q3:'#401e1e',Q4:'#40301e'};
+function renderIngredients(){
+  const list=document.getElementById('ingredientList');
+  list.innerHTML='';
+  ingredients.forEach((ing,i)=>{
+    const row=document.createElement('div');
+    row.className='ingredient-row';
+    const pctIn=document.createElement('input');
+    pctIn.type='number'; pctIn.min=0; pctIn.max=100; pctIn.step=1;
+    pctIn.value=ing.pct;
+    pctIn.className='pct-input';
+    pctIn.style.cssText='background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-family:DM Mono,monospace;font-size:11px;padding:2px 3px;outline:none;width:42px;text-align:right;transition:border-color .15s,color .15s;-moz-appearance:textfield;appearance:textfield;';
+    pctIn.addEventListener('focus',()=>{pctIn.select();pctIn.style.borderBottomColor='var(--green)';pctIn.style.color='var(--green)';});
+    pctIn.addEventListener('blur',()=>{pctIn.style.borderBottomColor='var(--border)';pctIn.style.color='var(--text)';});
+    pctIn.addEventListener('input',()=>{
+      const v=Math.max(0,parseFloat(pctIn.value)||0);
+      ingredients[i].pct=v;
+      updateTotal();
+      if(!document.getElementById('resultsArea').classList.contains('hidden')) liveRecalcDebounced();
+    });
+    pctIn.addEventListener('change',()=>{
+      const v=Math.max(0,parseFloat(pctIn.value)||0);
+      ingredients[i].pct=v;
+      pctIn.value=v;
+      updateTotal();
+    });
+    const nameWrap=document.createElement('div');
+    nameWrap.style.cssText='position:relative;width:100%;min-width:0;overflow:hidden;';
+    const nameLabel=document.createElement('div');
+    nameLabel.className='name-label';
+    nameLabel.textContent=ing.name||'—';
+    nameLabel.title='Clique para editar';
+    nameWrap.appendChild(nameLabel);
+    nameLabel.addEventListener('click', ()=>{
+      document.querySelectorAll('.name-edit-box').forEach(b=>b.remove());
+      const box=document.createElement('div');
+      box.className='name-edit-box';
+      const inp=document.createElement('input');
+      inp.type='text';
+      inp.value=ingredients[i].name||'';
+      inp.placeholder='nome do componente';
+      inp.className='name-edit-input';
+      const commit=()=>{
+        const v=inp.value.trim();
+        ingredients[i].name=v;
+        nameLabel.textContent=v||'—';
+        box.remove();
+      };
+      inp.addEventListener('keydown', e=>{
+        if(e.key==='Enter'||e.key==='Escape') commit();
+      });
+      inp.addEventListener('blur', commit);
+      box.append(inp);
+      nameWrap.appendChild(box);
+      inp.focus(); inp.select();
+    });
+    const nameIn=nameWrap;
+    const sel=document.createElement('select');
+    ['Q1','Q2','Q3','Q4'].forEach(q=>{
+      const opt=document.createElement('option');
+      opt.value=q; opt.textContent=q; if(ing.q===q) opt.selected=true;
+      sel.appendChild(opt);
+    });
+    sel.style.color=QCOLORS[ing.q];
+    sel.addEventListener('change',()=>{ingredients[i].q=sel.value;sel.style.color=QCOLORS[sel.value];});
+    const granIn=document.createElement('input');
+    granIn.type='number'; granIn.min=0; granIn.step=0.1;
+    granIn.value=ing.gran!=null?ing.gran:''; granIn.placeholder='mm';
+    const updateGran=()=>{
+      const v=parseFloat(granIn.value);
+      ingredients[i].gran=(granIn.value&&!isNaN(v)&&v>0)?v:null;
+      if(!document.getElementById('resultsArea').classList.contains('hidden')) liveRecalcDebounced();
+    };
+    granIn.addEventListener('change',updateGran);
+    granIn.addEventListener('input',updateGran);
+    const btnRem=document.createElement('button');
+    btnRem.className='btn-remove'; btnRem.textContent='×';
+    btnRem.addEventListener('click',()=>removeIng(i));
+    row.append(pctIn,nameIn,sel,granIn,btnRem);
+    list.appendChild(row);
+  });
+  updateTotal();
+}
+function updateTotal(){
+  const t=ingredients.reduce((s,i)=>s+i.pct,0);
+  const el=document.getElementById('totalDisplay');
+  const diff=parseFloat((100-t).toFixed(2));
+  if(Math.abs(diff)<0.01){
+    el.textContent=t.toFixed(1)+'%';
+    el.className='total-ok';
+    el.title='';
+  } else {
+    el.textContent=t.toFixed(1)+'%';
+    el.className='total-warn';
+    el.title=`Calcular ajustará ${diff>0?'+':''}${diff}% no componente de maior %`;
+  }
+}
+function removeIng(i){ingredients.splice(i,1);renderIngredients();}
+document.getElementById('btnAdd').onclick=()=>{ingredients.push({pct:0,name:'',q:'Q1',gran:null});renderIngredients();};
+function vectorFor(q,p){return {Q1:[+p,+p],Q2:[-p,+p],Q3:[-p,-p],Q4:[+p,-p]}[q];}
+function unitPos(q){return {Q1:[+1,+1],Q2:[-1,+1],Q3:[-1,-1],Q4:[+1,-1]}[q];}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Ig-TRG ENGINE — um handler por configuração de quadrantes
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Calcula granulometria média ponderada de um conjunto de ingredientes
+function _gMed(arr) {
+  const valid = arr.filter(i => i.gran != null && i.gran > 0);
+  const sumP  = valid.reduce((s,i) => s + i.pct, 0);
+  if (sumP <= 0) return null;
+  return valid.reduce((s,i) => s + i.pct * Math.max(0.1, i.gran), 0) / sumP;
+}
+
+// Curva de Icd gaussiana — limiar = (2/3)*GA (sempre)
+// Retorna valor em [0,1]: 1=compatível, 0=colapso
+function _calcIcd(G_dren, GA) {
+  if (G_dren == null || GA == null || GA <= 0) return null;
+  const lim    = (2/3) * GA;
+  const valGA  = 0.02 + 0.98 * (lim / GA);
+  const kG     = 12.0;
+  if (G_dren <= lim) {
+    const t = (lim - G_dren) / lim;
+    return Math.exp(-kG * t * t);
+  } else if (G_dren <= GA) {
+    const t = (G_dren - lim) / (GA - lim);
+    return 1 - (1 - valGA) * t * t;
+  } else {
+    return 0.02 + 0.98 * (lim / G_dren);
+  }
+}
+
+// Converte Icd → deslocamento signed: Icd=1 → +1 (bom), Icd=0 → -1 (colapso)
+function _signed(icd) { return 2 * icd - 1; }
+
+// Iprox/Idisc — dois índices independentes em torno do ideal Ig=2/3
+// Iprox: gaussiana centrada em Ig=2/3 → +1 no ideal, →0 longe  (0..+1)
+// Idisc: tanh da distância log       → 0 no ideal, →-1 longe   (-1..0)
+// Simétrico: Ig→0 e Ig→∞ têm mesma intensidade
+// fatorProp = sin²(π × pctDren/(pctDren+pctAbsorv)): ápice em 50/50
+function _calcIproxIdisc(Ig, pctDren, pctAbsorv) {
+  if (Ig == null || Ig <= 0 || pctDren + pctAbsorv <= 0)
+    return { Iprox: null, Idisc: null };
+  const fp    = Math.pow(Math.sin(Math.PI * pctDren / (pctDren + pctAbsorv)), 2);
+  const dist  = Math.abs(Math.log(Ig / (2/3)));
+  const Iprox =  Math.exp(-0.6 * dist * dist) * fp;
+  const Idisc = -Math.tanh(1.5 * dist)        * fp;
+  return { Iprox, Idisc };
+}
+
+
+// Combina múltiplos {icd, pct} em um dXg ponderado pelo % no total
+function _dXgFromIcds(icds, Bx) {
+  let raw = 0;
+  for (const {icd, pct} of icds) {
+    raw += _signed(icd) * pct / 100.0;
+  }
+  const clamped = Math.max(-1, Math.min(1, Bx + raw));
+  return { dXg: clamped - Bx, BgX: clamped };
+}
+
+// Calcula Ig = GA/GD (só quando ambos disponíveis)
+function _ig(GD, GA) {
+  return (GD != null && GA != null && GD > 0) ? GA / GD : null;
+}
+
+// ── Handlers por configuração ────────────────────────────────────────────
+// Cada handler recebe (ings, Bx) e retorna:
+// { GD, GA, Ig, limiar, icds:[{q,G,icd,pct}], dXg, BgX, intraQ:{} }
+
+function _igtrg_intra(ings, Bx, label) {
+  // Intra-grupo: P25/P75 sobre todos os ingredientes do grupo
+  const grp = ings.filter(i => i.gran != null && !isNaN(i.gran) && i.gran > 0 && i.pct > 0)
+                  .sort((a,b) => a.gran - b.gran);
+  if (grp.length < 2) return { GD:null, GA:null, Ig:null, limiar:null, icds:[], dXg:0, BgX:Bx, intraQ:{} };
+  function granNoPercentil(p) {
+    let acc = 0;
+    for (let k = 0; k < grp.length; k++) {
+      const prev = acc; acc += grp[k].pct;
+      if (acc >= p) {
+        if (k === 0 || prev >= p) return Math.max(0.1, grp[k].gran);
+        const frac = (p - prev) / (acc - prev);
+        return Math.max(0.1, grp[k-1].gran) + frac * (Math.max(0.1, grp[k].gran) - Math.max(0.1, grp[k-1].gran));
+      }
+    }
+    return Math.max(0.1, grp[grp.length-1].gran);
+  }
+  const GA25 = granNoPercentil(25);
+  const GD75 = granNoPercentil(75);
+  if (!GA25 || !GD75) return { GD:null, GA:null, Ig:null, limiar:null, icds:[], dXg:0, BgX:Bx, intraQ:{} };
+  const lim = (2/3)*GD75, vG2 = 0.02+0.98*(lim/GD75), G = GA25;
+  let icd;
+  if (G<=lim)      { const t=(lim-G)/lim;       icd = Math.exp(-4.6*t*t); }
+  else if (G<=GD75){ const t=(G-lim)/(GD75-lim); icd = 1-(1-vG2)*t*t; }
+  else             { icd = 0.02+0.98*(lim/G); }
+  const fatorDisp = (GA25>0 && GD75>GA25) ? Math.tanh(Math.log(GD75/GA25)) : 0;
+  const dXgRaw    = -(1 - icd) * fatorDisp;
+  const BgX       = Math.max(-1, Math.min(1, Bx + dXgRaw));
+  const intraQ    = { [label]: { Icd:icd, GA:GA25, GD:GD75, n:grp.length } };
+  return { GD:GD75, GA:GA25, Ig:null, limiar:lim, icds:[], dXg:BgX-Bx, BgX, intraQ };
+}
+
+// Dupla: GD=Q1, GA=Q2
+// Dois índices independentes em torno do ideal Ig=2/3:
+//
+//   Iprox: gaussiana centrada em Ig=2/3 — mede compatibilidade
+//     Ig=2/3 + 50/50 → +1.0 (C7)   |  Ig distante → →0
+//
+//   Idisc: tanh da distância log — mede risco de incompatibilidade
+//     Ig muito distante + 50/50 → -1.0 (C1)  |  Ig=2/3 → 0
+//     Simétrico: Ig→0 e Ig→∞ têm mesma intensidade negativa
+//
+//   dXg = Iprox + Idisc  (ambos alimentam B*)
+//   fatorProp = sin²(π × p1/(p1+p2)): ápice em 50/50, zero nas extremidades
+function _igtrg_Q1Q2(ings, Bx) {
+  const G1   = _gMed(ings.filter(i=>i.q==='Q1'));
+  const G2   = _gMed(ings.filter(i=>i.q==='Q2'));
+  const Ig   = _ig(G2, G1);   // Ig = G1/G2: ideal quando Q1=(3/2)×Q2, ou seja G1/G2=3/2 → invertido: G2/G1=2/3
+  const lim  = G1 != null ? (2/3)*G1 : null;
+  const icd  = _calcIcd(G2, G1);
+  const pct1 = ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const pct2 = ings.filter(i=>i.q==='Q2').reduce((s,i)=>s+i.pct,0);
+
+  const { Iprox, Idisc } = _calcIproxIdisc(Ig, pct1, pct2);
+  const dXgRaw = (Iprox ?? 0) + (Idisc ?? 0);
+
+  const BgX = Math.max(-1, Math.min(1, Bx + dXgRaw));
+  const dXg = BgX - Bx;
+  const icds = icd != null ? [{q:'Q1', G:G1, icd, pct:pct1}] : [];
+  return { GD:G1, GA:G2, Ig, limiar:lim, icds, dXg, BgX, intraQ:{}, Iprox, Idisc };
+}
+
+// Dupla: GD=Q1, GA=Q3
+function _igtrg_Q1Q3(ings, Bx) {
+  const G1 = _gMed(ings.filter(i=>i.q==='Q1'));
+  const G3 = _gMed(ings.filter(i=>i.q==='Q3'));
+  const Ig = _ig(G3, G1);  // Ig = GDren/GAbsorv = G1/G3
+  const lim = G3 != null ? (2/3)*G3 : null;
+  const icd = _calcIcd(G1, G3);
+  const pct1 = ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const icds = icd != null ? [{q:'Q1', G:G1, icd, pct:pct1}] : [];
+  const {dXg, BgX} = icds.length ? _dXgFromIcds(icds, Bx) : {dXg:0, BgX:Bx};
+  const _pctD__igtrg_Q1Q3 = ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const _pctA__igtrg_Q1Q3 = ings.filter(i=>i.q==='Q3').reduce((s,i)=>s+i.pct,0);
+  const { Iprox: _Ip__igtrg_Q1Q3, Idisc: _Id__igtrg_Q1Q3 } = _calcIproxIdisc(Ig, _pctD__igtrg_Q1Q3, _pctA__igtrg_Q1Q3);
+
+  return { GD:G1, GA:G3, Ig, limiar:lim, icds, dXg, BgX, intraQ:{} , Iprox:_Ip__igtrg_Q1Q3, Idisc:_Id__igtrg_Q1Q3};
+}
+
+// Dupla: GD=Q1, GA=Q4 (EXCEÇÃO: Q4 vira absorvente relativo)
+function _igtrg_Q1Q4(ings, Bx) {
+  const G1 = _gMed(ings.filter(i=>i.q==='Q1'));
+  const G4 = _gMed(ings.filter(i=>i.q==='Q4'));
+  // Q4 é GA aqui — Q1 é GD
+  const Ig  = _ig(G4, G1);  // Ig = GDren/GAbsorv = G1/G4
+  const lim = G4 != null ? (2/3)*G4 : null;
+  const icd = _calcIcd(G1, G4);  // Q1 calculado contra limiar(G4)
+  const pct1 = ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const icds = icd != null ? [{q:'Q1', G:G1, icd, pct:pct1}] : [];
+  const {dXg, BgX} = icds.length ? _dXgFromIcds(icds, Bx) : {dXg:0, BgX:Bx};
+  const _pctD__igtrg_Q1Q4 = ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const _pctA__igtrg_Q1Q4 = ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const { Iprox: _Ip__igtrg_Q1Q4, Idisc: _Id__igtrg_Q1Q4 } = _calcIproxIdisc(Ig, _pctD__igtrg_Q1Q4, _pctA__igtrg_Q1Q4);
+
+  return { GD:G1, GA:G4, Ig, limiar:lim, icds, dXg, BgX, intraQ:{}, q4IsAbsorv:true , Iprox:_Ip__igtrg_Q1Q4, Idisc:_Id__igtrg_Q1Q4};
+}
+
+// ── Mono-quadrante: média ponderada divide drenante (gran > média) e absorvente (gran < média) ──
+// Mesma lógica do Q2Q3: maior G → drenante, menor → absorvente, mas determinado dinamicamente
+// pela média ponderada interna do grupo.
+function _igtrg_mono(ings, Bx, label) {
+  const grp = ings.filter(i => i.gran != null && !isNaN(i.gran) && i.gran > 0 && i.pct > 0);
+  if (grp.length < 2) return { GD:null, GA:null, Ig:null, limiar:null, icds:[], dXg:0, BgX:Bx, intraQ:{[label]:{Icd:null,GA:null,GD:null,n:grp.length}}, Iprox:null, Idisc:null };
+  // média ponderada do grupo
+  const sumPct = grp.reduce((s,i)=>s+i.pct, 0);
+  const gMed   = grp.reduce((s,i)=>s+i.gran*i.pct, 0) / sumPct;
+  // divide: abaixo da média → drenante (mais fino), acima → absorvente (mais grosso)
+  const drain  = grp.filter(i => i.gran <= gMed);
+  const absorv = grp.filter(i => i.gran >  gMed);
+  if (!drain.length || !absorv.length) return { GD:null, GA:null, Ig:null, limiar:null, icds:[], dXg:0, BgX:Bx, intraQ:{[label]:{Icd:null,GA:null,GD:null,n:grp.length}}, Iprox:null, Idisc:null };
+  const pctD = drain.reduce((s,i)=>s+i.pct, 0);
+  const pctA = absorv.reduce((s,i)=>s+i.pct, 0);
+  const GD   = drain.reduce((s,i)=>s+i.gran*i.pct, 0) / pctD;
+  const GA   = absorv.reduce((s,i)=>s+i.gran*i.pct, 0) / pctA;
+  const Ig   = _ig(GA, GD);
+  const lim  = GA != null ? (2/3)*GA : null;
+  const icd  = _calcIcd(GA, GD);
+  const icds = icd != null ? [{q:label, G:GA, icd, pct:pctA}] : [];
+  const {dXg, BgX} = icds.length ? _dXgFromIcds(icds, Bx) : {dXg:0, BgX:Bx};
+  const intraQ = { [label]: { Icd:icd, GA, GD, n:grp.length } };
+  const { Iprox: IproxBase, Idisc: IdiscBase } = _calcIproxIdisc(Ig, pctD, pctA);
+
+  // ── Fator granulométrico intra-mono ──────────────────────────────────────
+  // Ordena N componentes de maior → menor granulometria
+  // rank_i: 0 para g_max, 1 para g_min (normalizado por posição na ordem)
+  // fator_i = rank_i × (pct_i / sumPct)  →  soma integrada = F ∈ [0, 1]
+  // F = 0: todos com mesma gran ou tudo no maior → sem efeito
+  // F = 1: todo o peso no componente de menor gran → efeito máximo
+  let Iprox = IproxBase, Idisc = IdiscBase;
+  if (grp.length >= 2 && IproxBase != null && IdiscBase != null) {
+    const sorted = [...grp].sort((a, b) => b.gran - a.gran); // maior → menor
+    const N = sorted.length;
+    const gMax = sorted[0].gran;
+    const gMin = sorted[N-1].gran;
+    if (gMax > gMin) { // só aplica se há dispersão real de granulometria
+      const amp = gMax - gMin;
+      let F = 0;
+      sorted.forEach((comp) => {
+        const rank = (gMax - comp.gran) / amp; // distância real normalizada: 0=maior, 1=menor
+        const wRel = comp.pct / sumPct;        // peso relativo no grupo
+        F += rank * wRel;
+      });
+      // F ∈ [0,1]: reduz Iprox e amplifica |Idisc| proporcionalmente
+      Iprox = IproxBase * (1 - F);
+      Idisc = IdiscBase * (1 + F);
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  return { GD, GA, Ig, limiar:lim, icds, dXg, BgX, intraQ, Iprox, Idisc, Fmono: (typeof F !== 'undefined' ? F : null) };
+}
+function _igtrg_Q1(ings, Bx) { return _igtrg_mono(ings, Bx, 'Q1'); }
+function _igtrg_Q2(ings, Bx) { return _igtrg_mono(ings, Bx, 'Q2'); }
+function _igtrg_Q3(ings, Bx) { return _igtrg_mono(ings, Bx, 'Q3'); }
+function _igtrg_Q4(ings, Bx) { return _igtrg_mono(ings, Bx, 'Q4'); }
+
+// Dupla: Q2Q3 — maior G vira absorvente, menor vira drenante (dinâmico)
+function _igtrg_Q2Q3(ings, Bx) {
+  const G2 = _gMed(ings.filter(i=>i.q==='Q2'));
+  const G3 = _gMed(ings.filter(i=>i.q==='Q3'));
+  // dinâmico: maior G → absorvente
+  const GA = Math.max(G2 ?? 0, G3 ?? 0);
+  const GD = Math.min(G2 ?? Infinity, G3 ?? Infinity);
+  const qA = (G2 >= G3) ? 'Q2' : 'Q3';
+  const qD = (G2 >= G3) ? 'Q3' : 'Q2';
+  const Ig  = _ig(GA, GD);  // convenção: _ig(GA, GD) → GD/GA, ideal = 2/3
+  const lim = GA != null ? (2/3)*GA : null;
+  const pctD = ings.filter(i=>i.q===qD).reduce((s,i)=>s+i.pct,0);
+  const pctA = ings.filter(i=>i.q===qA).reduce((s,i)=>s+i.pct,0);
+  const icd = _calcIcd(GD, GA);
+  const icds = icd != null ? [{q:qD, G:GD, icd, pct:pctD}] : [];
+  const {dXg, BgX} = icds.length ? _dXgFromIcds(icds, Bx) : {dXg:0, BgX:Bx};
+  const { Iprox: _Ip__igtrg_Q2Q3, Idisc: _Id__igtrg_Q2Q3 } = _calcIproxIdisc(Ig, pctD, pctA);
+  return { GD, GA, Ig, limiar:lim, icds, dXg, BgX, intraQ:{}, q2q3DynAbsorv:qA, Iprox:_Ip__igtrg_Q2Q3, Idisc:_Id__igtrg_Q2Q3 };
+}
+
+// Dupla: GD=Q4, GA=Q2
+function _igtrg_Q2Q4(ings, Bx) {
+  const G4 = _gMed(ings.filter(i=>i.q==='Q4'));
+  const G2 = _gMed(ings.filter(i=>i.q==='Q2'));
+  const Ig = _ig(G2, G4);  // Ig = GDren/GAbsorv = G4/G2
+  const lim = G2 != null ? (2/3)*G2 : null;
+  const icd = _calcIcd(G4, G2);
+  const pct4 = ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const icds = icd != null ? [{q:'Q4', G:G4, icd, pct:pct4}] : [];
+  const {dXg, BgX} = icds.length ? _dXgFromIcds(icds, Bx) : {dXg:0, BgX:Bx};
+  const _pctD__igtrg_Q2Q4 = ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const _pctA__igtrg_Q2Q4 = ings.filter(i=>i.q==='Q2').reduce((s,i)=>s+i.pct,0);
+  const { Iprox: _Ip__igtrg_Q2Q4, Idisc: _Id__igtrg_Q2Q4 } = _calcIproxIdisc(Ig, _pctD__igtrg_Q2Q4, _pctA__igtrg_Q2Q4);
+
+  return { GD:G4, GA:G2, Ig, limiar:lim, icds, dXg, BgX, intraQ:{} , Iprox:_Ip__igtrg_Q2Q4, Idisc:_Id__igtrg_Q2Q4};
+}
+
+// Dupla: GD=Q4, GA=Q3
+function _igtrg_Q3Q4(ings, Bx) {
+  const G4 = _gMed(ings.filter(i=>i.q==='Q4'));
+  const G3 = _gMed(ings.filter(i=>i.q==='Q3'));
+  const Ig = _ig(G3, G4);  // Ig = GDren/GAbsorv = G4/G3
+  const lim = G3 != null ? (2/3)*G3 : null;
+  const icd = _calcIcd(G4, G3);
+  const pct4 = ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const icds = icd != null ? [{q:'Q4', G:G4, icd, pct:pct4}] : [];
+  const {dXg, BgX} = icds.length ? _dXgFromIcds(icds, Bx) : {dXg:0, BgX:Bx};
+  const _pctD__igtrg_Q3Q4 = ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const _pctA__igtrg_Q3Q4 = ings.filter(i=>i.q==='Q3').reduce((s,i)=>s+i.pct,0);
+  const { Iprox: _Ip__igtrg_Q3Q4, Idisc: _Id__igtrg_Q3Q4 } = _calcIproxIdisc(Ig, _pctD__igtrg_Q3Q4, _pctA__igtrg_Q3Q4);
+
+  return { GD:G4, GA:G3, Ig, limiar:lim, icds, dXg, BgX, intraQ:{} , Iprox:_Ip__igtrg_Q3Q4, Idisc:_Id__igtrg_Q3Q4};
+}
+
+// Tripla: GD=Q1, GA=ponderado(Q2+Q3)
+function _igtrg_Q1Q2Q3(ings, Bx) {
+  const G1  = _gMed(ings.filter(i=>i.q==='Q1'));
+  const GA  = _gMed(ings.filter(i=>i.q==='Q2'||i.q==='Q3'));
+  const Ig  = _ig(GA, G1);  // Ig = GDren/GAbsorv = G1/GA
+  const lim = GA != null ? (2/3)*GA : null;
+  const icd = _calcIcd(G1, GA);
+  const pct1 = ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const icds = icd != null ? [{q:'Q1', G:G1, icd, pct:pct1}] : [];
+  const {dXg, BgX} = icds.length ? _dXgFromIcds(icds, Bx) : {dXg:0, BgX:Bx};
+  const _pctD__igtrg_Q1Q2Q3 = ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const _pctA__igtrg_Q1Q2Q3 = ings.filter(i=>i.q==='Q2'||i.q==='Q3').reduce((s,i)=>s+i.pct,0);
+  const { Iprox: _Ip__igtrg_Q1Q2Q3, Idisc: _Id__igtrg_Q1Q2Q3 } = _calcIproxIdisc(Ig, _pctD__igtrg_Q1Q2Q3, _pctA__igtrg_Q1Q2Q3);
+
+  return { GD:G1, GA, Ig, limiar:lim, icds, dXg, BgX, intraQ:{} , Iprox:_Ip__igtrg_Q1Q2Q3, Idisc:_Id__igtrg_Q1Q2Q3};
+}
+
+// Tripla: GD=ponderado(Q1+Q4), GA=Q2 — dois Icds
+function _igtrg_Q1Q2Q4(ings, Bx) {
+  const G1  = _gMed(ings.filter(i=>i.q==='Q1'));
+  const G4  = _gMed(ings.filter(i=>i.q==='Q4'));
+  const G2  = _gMed(ings.filter(i=>i.q==='Q2'));
+  const GD  = _gMed(ings.filter(i=>i.q==='Q1'||i.q==='Q4'));
+  const Ig  = _ig(G2, GD);  // Ig = GDren/GAbsorv = GD/G2
+  const lim = G2 != null ? (2/3)*G2 : null;
+  const icd1 = _calcIcd(G1, G2);
+  const icd4 = _calcIcd(G4, G2);
+  const pct1 = ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const pct4 = ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const icds = [
+    ...(icd1 != null ? [{q:'Q1', G:G1, icd:icd1, pct:pct1}] : []),
+    ...(icd4 != null ? [{q:'Q4', G:G4, icd:icd4, pct:pct4}] : []),
+  ];
+  const {dXg, BgX} = icds.length ? _dXgFromIcds(icds, Bx) : {dXg:0, BgX:Bx};
+  const _pctD__igtrg_Q1Q2Q4 = ings.filter(i=>i.q==='Q1'||i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const _pctA__igtrg_Q1Q2Q4 = ings.filter(i=>i.q==='Q2').reduce((s,i)=>s+i.pct,0);
+  const { Iprox: _Ip__igtrg_Q1Q2Q4, Idisc: _Id__igtrg_Q1Q2Q4 } = _calcIproxIdisc(Ig, _pctD__igtrg_Q1Q2Q4, _pctA__igtrg_Q1Q2Q4);
+
+  return { GD, GA:G2, Ig, limiar:lim, icds, dXg, BgX, intraQ:{} , Iprox:_Ip__igtrg_Q1Q2Q4, Idisc:_Id__igtrg_Q1Q2Q4};
+}
+
+// Tripla: GD=ponderado(Q1+Q4), GA=Q3 — dois Icds
+function _igtrg_Q1Q3Q4(ings, Bx) {
+  const G1  = _gMed(ings.filter(i=>i.q==='Q1'));
+  const G4  = _gMed(ings.filter(i=>i.q==='Q4'));
+  const G3  = _gMed(ings.filter(i=>i.q==='Q3'));
+  const GD  = _gMed(ings.filter(i=>i.q==='Q1'||i.q==='Q4'));
+  const Ig  = _ig(G3, GD);  // Ig = GDren/GAbsorv = GD/G3
+  const lim = G3 != null ? (2/3)*G3 : null;
+  const icd1 = _calcIcd(G1, G3);
+  const icd4 = _calcIcd(G4, G3);
+  const pct1 = ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const pct4 = ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const icds = [
+    ...(icd1 != null ? [{q:'Q1', G:G1, icd:icd1, pct:pct1}] : []),
+    ...(icd4 != null ? [{q:'Q4', G:G4, icd:icd4, pct:pct4}] : []),
+  ];
+  const {dXg, BgX} = icds.length ? _dXgFromIcds(icds, Bx) : {dXg:0, BgX:Bx};
+  const _pctD__igtrg_Q1Q3Q4 = ings.filter(i=>i.q==='Q1'||i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const _pctA__igtrg_Q1Q3Q4 = ings.filter(i=>i.q==='Q3').reduce((s,i)=>s+i.pct,0);
+  const { Iprox: _Ip__igtrg_Q1Q3Q4, Idisc: _Id__igtrg_Q1Q3Q4 } = _calcIproxIdisc(Ig, _pctD__igtrg_Q1Q3Q4, _pctA__igtrg_Q1Q3Q4);
+
+  return { GD, GA:G3, Ig, limiar:lim, icds, dXg, BgX, intraQ:{} , Iprox:_Ip__igtrg_Q1Q3Q4, Idisc:_Id__igtrg_Q1Q3Q4};
+}
+
+// Tripla: GD=Q4, GA=ponderado(Q2+Q3)
+function _igtrg_Q2Q3Q4(ings, Bx) {
+  const G4  = _gMed(ings.filter(i=>i.q==='Q4'));
+  const GA  = _gMed(ings.filter(i=>i.q==='Q2'||i.q==='Q3'));
+  const Ig  = _ig(GA, G4);  // Ig = GDren/GAbsorv = G4/GA
+  const lim = GA != null ? (2/3)*GA : null;
+  const icd4 = _calcIcd(G4, GA);
+  const pct4 = ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const icds = icd4 != null ? [{q:'Q4', G:G4, icd:icd4, pct:pct4}] : [];
+  const {dXg, BgX} = icds.length ? _dXgFromIcds(icds, Bx) : {dXg:0, BgX:Bx};
+  const _pctD__igtrg_Q2Q3Q4 = ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const _pctA__igtrg_Q2Q3Q4 = ings.filter(i=>i.q==='Q2'||i.q==='Q3').reduce((s,i)=>s+i.pct,0);
+  const { Iprox: _Ip__igtrg_Q2Q3Q4, Idisc: _Id__igtrg_Q2Q3Q4 } = _calcIproxIdisc(Ig, _pctD__igtrg_Q2Q3Q4, _pctA__igtrg_Q2Q3Q4);
+
+  return { GD:G4, GA, Ig, limiar:lim, icds, dXg, BgX, intraQ:{} , Iprox:_Ip__igtrg_Q2Q3Q4, Idisc:_Id__igtrg_Q2Q3Q4};
+}
+
+// Quádrupla: GD=pond(Q1+Q4), GA=pond(Q2+Q3) — dois Icds separados
+function _igtrg_Q1Q2Q3Q4(ings, Bx) {
+  const G1  = _gMed(ings.filter(i=>i.q==='Q1'));
+  const G4  = _gMed(ings.filter(i=>i.q==='Q4'));
+  const GA  = _gMed(ings.filter(i=>i.q==='Q2'||i.q==='Q3'));
+  const GD  = _gMed(ings.filter(i=>i.q==='Q1'||i.q==='Q4'));
+  const Ig  = _ig(GA, GD);  // Ig = GDren/GAbsorv = GD/GA
+  const lim = GA != null ? (2/3)*GA : null;
+  const icd1 = _calcIcd(G1, GA);
+  const icd4 = _calcIcd(G4, GA);
+  const pct1 = ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const pct4 = ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const icds = [
+    ...(icd1 != null ? [{q:'Q1', G:G1, icd:icd1, pct:pct1}] : []),
+    ...(icd4 != null ? [{q:'Q4', G:G4, icd:icd4, pct:pct4}] : []),
+  ];
+  const {dXg, BgX} = icds.length ? _dXgFromIcds(icds, Bx) : {dXg:0, BgX:Bx};
+  const _pctD__igtrg_Q1Q2Q3Q4 = ings.filter(i=>i.q==='Q1'||i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const _pctA__igtrg_Q1Q2Q3Q4 = ings.filter(i=>i.q==='Q2'||i.q==='Q3').reduce((s,i)=>s+i.pct,0);
+  const { Iprox: _Ip__igtrg_Q1Q2Q3Q4, Idisc: _Id__igtrg_Q1Q2Q3Q4 } = _calcIproxIdisc(Ig, _pctD__igtrg_Q1Q2Q3Q4, _pctA__igtrg_Q1Q2Q3Q4);
+
+  return { GD, GA, Ig, limiar:lim, icds, dXg, BgX, intraQ:{} , Iprox:_Ip__igtrg_Q1Q2Q3Q4, Idisc:_Id__igtrg_Q1Q2Q3Q4};
+}
+
+// Dispatcher principal
+function calcIgTRG(ings, Bx) {
+  const qs = new Set(ings.map(i=>i.q));
+  const has = q => qs.has(q);
+  const hasDrain  = has('Q1') || has('Q4');
+  const hasAbsorb = has('Q2') || has('Q3');
+
+  // ── Intra-grupo ─────────────────────────────────────────────────────
+  // Q1+Q4 puro: exceção — Q4 age como absorvente relativo → inter-grupo
+  // Q2+Q3 puro: exceção — maior G vira absorvente, menor vira drenante → inter-grupo
+  // Mono-quadrante: cada quadrante tem handler próprio com P25/P75 → inter-grupo interno
+  const isQ1Q4only  = has('Q1') && has('Q4') && !has('Q2') && !has('Q3');
+  const isQ2Q3only  = has('Q2') && has('Q3') && !has('Q1') && !has('Q4');
+  const isMonoQ     = qs.size === 1;
+  if (!isQ1Q4only && !isQ2Q3only && !isMonoQ && (!hasDrain || !hasAbsorb)) {
+    let label;
+    if (qs.size === 1)              label = [...qs][0];
+    else if (!hasAbsorb)            label = 'Q1+Q4';
+    else                            label = 'Q2+Q3';
+    return _igtrg_intra(ings, Bx, label);
+  }
+
+  // ── Inter-grupo: despacho por config ────────────────────────────────
+  const key = ['Q1','Q2','Q3','Q4'].filter(q=>qs.has(q)).join('');
+  const handlers = {
+    'Q1'      : _igtrg_Q1,
+    'Q2'      : _igtrg_Q2,
+    'Q3'      : _igtrg_Q3,
+    'Q4'      : _igtrg_Q4,
+    'Q1Q2'    : _igtrg_Q1Q2,
+    'Q1Q3'    : _igtrg_Q1Q3,
+    'Q1Q4'    : _igtrg_Q1Q4,
+    'Q2Q3'    : _igtrg_Q2Q3,
+    'Q2Q4'    : _igtrg_Q2Q4,
+    'Q3Q4'    : _igtrg_Q3Q4,
+    'Q1Q2Q3'  : _igtrg_Q1Q2Q3,
+    'Q1Q2Q4'  : _igtrg_Q1Q2Q4,
+    'Q1Q3Q4'  : _igtrg_Q1Q3Q4,
+    'Q2Q3Q4'  : _igtrg_Q2Q3Q4,
+    'Q1Q2Q3Q4': _igtrg_Q1Q2Q3Q4,
+  };
+  const fn = handlers[key];
+  if (fn) return fn(ings, Bx);
+  // fallback (não deve ocorrer)
+  return { GD:null, GA:null, Ig:null, limiar:null, icds:[], dXg:0, BgX:Bx, intraQ:{} };
+}
+
+function computeModel(ings){
+  ings = ings.filter(i=>i!=null && i.pct!=null && i.q!=null);
+  let Rx=0,Ry=0;
+  const vecs=ings.map(ing=>{const v=vectorFor(ing.q,ing.pct);Rx+=v[0];Ry+=v[1];return v;});
+  const sumPct=ings.reduce((s,i)=>s+i.pct,0);
+  const Bx=sumPct>0?Rx/sumPct:0, By=sumPct>0?Ry/sumPct:0;
+  let sumBsx=0,sumBsy=0;
+  ings.forEach(ing=>{const p=unitPos(ing.q);sumBsx+=p[0];sumBsy+=p[1];});
+  const Bsx=ings.length>0?sumBsx/ings.length:0, Bsy=ings.length>0?sumBsy/ings.length:0;
+
+  // ── Ig-TRG: despacho pelo engine de configuração ─────────────────────
+  const igtrg = calcIgTRG(ings, Bx);
+  const { GD, GA, Ig, limiar, icds, intraQ } = igtrg;
+  let dXg = igtrg.dXg, BgX = igtrg.BgX;
+  const BgY = By;
+
+  // Compat: extrair Icd/Icd4/G1/G2/G4 do array icds para exibição
+  const _icdFor = q => { const e = icds.find(x=>x.q===q); return e ? e.icd : null; };
+  const _gFor   = q => { const e = icds.find(x=>x.q===q); return e ? e.G   : null; };
+  const Icd  = _icdFor('Q1');
+  const Icd4 = _icdFor('Q4');
+  const G1   = _gFor('Q1') ?? _gMed(ings.filter(i=>i.q==='Q1'));
+  const G2   = _gMed(ings.filter(i=>i.q==='Q2'));
+  const G3   = _gMed(ings.filter(i=>i.q==='Q3'));
+  const G4   = _gFor('Q4') ?? _gMed(ings.filter(i=>i.q==='Q4'));
+  const Gmed = _gMed(ings.filter(i=>i.gran!=null));
+  const contamQ4 = 0; // removido — lógica simplificada pelo engine
+
+  // Percentuais por quadrante
+  const Oa=ings.filter(i=>i.q==='Q3').reduce((s,i)=>s+i.pct,0);
+  const Od=ings.filter(i=>i.q==='Q4').reduce((s,i)=>s+i.pct,0);
+  const Id=ings.filter(i=>i.q==='Q1').reduce((s,i)=>s+i.pct,0);
+  const Ia=ings.filter(i=>i.q==='Q2').reduce((s,i)=>s+i.pct,0);
+  const S=Ia+Oa+Od;
+  const Stotal=ings.reduce((s,i)=>s+i.pct,0)||100;
+  const sumPD=Id+Od, sumPA=Ia+Oa;
+
+  // ── Degradabilidade (Rd) ─────────────────────────────────────────────
+  // Sigmoides calibradas por quadrante (Q3=100% e Q4=100% para cada gran):
+  //   Q3: a=0.440 b=0.460 k=0.170  → 0.1mm→C1, 1mm→C2, 3mm→C2, 5mm→C3, 10mm→C4, 15mm→C4
+  //   Q4: a=0.420 b=0.500 k=0.320  → 0.1mm→C1, 1mm→C2, 3mm→C3, 5mm→C4, 10mm→C4, 15mm→C5
+  // Rd_ef(ingrediente) = sigmoide(gran) × (pct/Stotal)
+  // indD = 1 - 2 × ΣRd_ef  →  função contínua sem multiplicadores externos
+  const q3Ings = ings.filter(i => i.q==='Q3');
+  const q4Ings = ings.filter(i => i.q==='Q4');
+  const q3Total = q3Ings.reduce((s,i) => s+i.pct, 0);
+  const q4Total = q4Ings.reduce((s,i) => s+i.pct, 0);
+  const orgTotal = q3Total + q4Total;
+
+  const _rdQ3 = (g) => 0.440 + 0.460 * Math.exp(-0.170 * Math.max(0.1, g));
+  const _rdQ4 = (g) => 0.420 + 0.500 * Math.exp(-0.320 * Math.max(0.1, g));
+
+  // Q3: usa (pctTotal/100)^0.45 × rdQ3_med para deslocar inflexão — 5%→C6, 30%→C4, 90%→C1
+  // Q4: linear como antes
+  const _gQ3medRd = q3Total > 0 ? q3Ings.reduce((s,i)=>s+Math.max(0.1,i.gran||2)*i.pct,0)/q3Total : 2;
+  const _gQ4medRd = q4Total > 0 ? q4Ings.reduce((s,i)=>s+Math.max(0.1,i.gran||5)*i.pct,0)/q4Total : 5;
+  const _rdQ3max = 0.8922; // rdQ3(0.1mm) — normaliza para Q3=100% gran=0.1mm → Rd_ef=1.0 → indD=-1
+  const _rdQ3contrib = q3Total > 0 ? Math.pow(q3Total/100, 0.45) * (_rdQ3(_gQ3medRd) / _rdQ3max) : 0;
+  const _rdQ4contrib = q4Total > 0 ? (q4Total/100) * _rdQ4(_gQ4medRd) : 0;
+
+  const Rd_ef = _rdQ3contrib + _rdQ4contrib;
+
+  let indD_raw = 1 - 2 * Rd_ef;
+  {
+    const _pctQ4 = q4Total;
+    if (Od > 0) {
+      // Q4 presente: teto assintótico por % — Q4=100%→C5(0.38); Q4 diluído→sobe
+      const _tetoQ4 = 0.38 + 0.62 * Math.pow(1 - _pctQ4/100, 1.5);
+      indD_raw = Math.min(indD_raw, _tetoQ4);
+    }
+  }
+  const indD = Math.max(-1, Math.min(1, indD_raw));
+
+  const Rd_base = _rdQ3contrib + _rdQ4contrib;
+  const Rd = Rd_base, RdEf = Rd_ef;
+  const dXdFator = (Oa===0 && Od>0) ? 0.3 : 1.0;
+  const dXd = -RdEf * dXdFator;
+  const dYd = -RdEf;
+
+  const BfXraw=BgX+dXd, BfYraw=BgY+dYd;
+  const BfX=Math.max(-1,Math.min(1,BfXraw)), BfY=Math.max(-1,Math.min(1,BfYraw));
+
+  // ── Índices F, H (reatividade e hidráulico) ──────────────────────────
+  function sigmNorm(g, Vmin, Vmax, k, g0, gMin=0.1, gMax=15) {
+    const raw = x => 1/(1+Math.exp(-k*(x-g0)));
+    const rMin = raw(gMin), rMax = raw(gMax);
+    return Vmin + (Vmax-Vmin) * (raw(g)-rMin)/(rMax-rMin);
+  }
+  function blend2(g, Vmin, Vmid, Vmax, pivot, k1, k2) {
+    const v1 = sigmNorm(g, Vmin, Vmid, k1, pivot/2,      0.1,   pivot);
+    const v2 = sigmNorm(g, Vmid, Vmax, k2, (pivot+15)/2,  pivot, 15);
+    const w2 = 1/(1+Math.exp(-2.5*(g-pivot)));
+    return v1*(1-w2) + v2*w2;
+  }
+  function evalCurve(p, g) {
+    if (p.mode === 'blend2') return blend2(g, p.Vmin, p.Vmid, p.Vmax, p.pivot, p.k1, p.k2);
+    return sigmNorm(g, p.Vmin, p.Vmax, p.k, p.g0);
+  }
+  const F_PARAMS = {
+    Q1: {mode:'sig',    Vmin: 0.000, Vmax:+0.917, k:1.45,  g0:1.300},
+    Q2: {mode:'sig',    Vmin:-0.530, Vmax:-0.193, k:2.40,  g0:0.100},
+    Q3: {mode:'blend2', Vmin:-0.840, Vmid:-0.530, Vmax:-0.193, pivot:3, k1:3.0, k2:0.25},
+    Q4: {mode:'sig',    Vmin:-0.260, Vmax:+0.598, k:0.40,  g0:0.100},
+  };
+  const H_PARAMS = {
+    Q1: {mode:'blend2', Vmin:-0.530, Vmid:+0.625, Vmax:+0.917, pivot:3.9, k1:1.900, k2:0.950},
+    Q2: {mode:'sig',    Vmin:-0.530, Vmax:+0.065, k:0.970, g0:1.800},
+    Q3: {mode:'sig',    Vmin:-0.835, Vmax:+0.180, k:0.690, g0:0.100},
+    Q4: {mode:'blend2', Vmin:-0.530, Vmid:-0.078, Vmax:+0.598, pivot:3.1, k1:6.000, k2:0.225},
+  };
+  let indH_num=0, indH_den=0, indF_num=0, indF_den=0;
+  ings.forEach(i => {
+    const g = Math.max(0.1, i.gran||2);
+    indH_num += evalCurve(H_PARAMS[i.q], g) * i.pct;
+    indH_den += i.pct;
+    indF_num += evalCurve(F_PARAMS[i.q], g) * i.pct;
+    indF_den += i.pct;
+  });
+  const indH         = indH_den>0 ? Math.max(-1, Math.min(1, indH_num/indH_den)) : 0;
+  const indF_clamped = indF_den>0 ? Math.max(-1, Math.min(1, indF_num/indF_den)) : 0;
+
+  const ctcMix = ings.reduce((s,i) => {
+    const g = Math.max(0.1, i.gran||2);
+    let ctc = 0;
+    if(i.q==='Q1') ctc = 1.0/Math.pow(g,0.3);
+    else if(i.q==='Q2') ctc = 6.0/Math.pow(g,0.2);
+    else if(i.q==='Q3') ctc = 8.0/Math.pow(g,0.5);
+    else if(i.q==='Q4') ctc = 4.0/Math.pow(g,0.2);
+    return s + (i.pct/100)*ctc;
+  }, 0);
+
+  // ── indG: índice granulométrico normalizado ──────────────────────────
+  // fatorQ: para mono-quadrante sumPA ou sumPD é 0 → usa proporção interna do igtrg
+  const _fqPD = sumPD > 0 ? sumPD : (igtrg.icds.length ? igtrg.icds[0].pct : 0);
+  const _fqPA = sumPA > 0 ? sumPA : (igtrg.icds.length ? (100 - igtrg.icds[0].pct) : 0);
+  const fatorQ = (_fqPA > 0 && _fqPD > 0) ? Math.pow(Math.min(_fqPA, _fqPD) / Math.max(_fqPA, _fqPD), 2) : 0;
+  let indG = null;
+  if (Ig != null && icds.length > 0) {
+    // inter-grupo com Icd disponível: usa Icd médio ponderado
+    const icdMed = icds.reduce((s,e)=>s+e.icd*e.pct,0) / icds.reduce((s,e)=>s+e.pct,0);
+    indG = Math.tanh(Math.log(Ig)) * icdMed * fatorQ;
+  } else if (Ig != null) {
+    indG = Math.tanh(Math.log(Ig)) * fatorQ;
+  } else {
+    const icdIntra = Object.values(intraQ)[0]?.Icd;
+    if (icdIntra != null) indG = -(1 - icdIntra);
+  }
+
+  // RdEfQ4 mantido para compat com display
+  const RdEfQ4 = (Od/100)*(Od/100);
+  const ratio = null, kExp = null;
+
+  const Iprox = igtrg.Iprox ?? null;
+  const Idisc = igtrg.Idisc ?? null;
+  const Fmono = igtrg.Fmono ?? null;
+  return {vecs,Rx,Ry,Bx,By,Bsx,Bsy,sumPct,GD,GA,Ig,Icd,Icd4,G1,G2,G3,G4,Gmed,limiar,
+          icds,ratio,kExp,dXg,BgX,BgY,Oa,Od,Id,Ia,S,Rd,RdEf,dXd,dYd,BfX,BfY,
+          intraQ,RdEfQ4,contamQ4,indH,indF:indF_clamped,indG,indD,ctcMix,Iprox,Idisc,Fmono};
+}
+function quadrantOf(x,y){if(x>=0&&y>=0)return'Q1';if(x<0&&y>=0)return'Q2';if(x<0&&y<0)return'Q3';return'Q4';}
+function quadrantLabel(q){
+  return {Q1:'Drenante Mineral',Q2:'Absorvente Mineral',Q3:'Absorvente Orgânico',Q4:'Drenante Orgânico'}[q];
+}
+function chartBounds(pts){
+  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+  const absMax=Math.max(Math.abs(Math.min(...xs)),Math.abs(Math.max(...xs)),
+                        Math.abs(Math.min(...ys)),Math.abs(Math.max(...ys)),0.4);
+  const n=Math.ceil((absMax+0.2)*10)/10;
+  return {min:-n,max:n};
+}
+function makeQuadrantPlugin(id){
+  return {
+    id,
+    beforeDraw(chart){
+      const {ctx:c,chartArea:ca,scales:sc}=chart;
+      const x0=sc.x.getPixelForValue(0),y0=sc.y.getPixelForValue(0);
+      c.save();
+      [{x:x0,y:ca.top,w:ca.right-x0,h:y0-ca.top,col:'rgba(111,207,122,0.03)'},
+       {x:ca.left,y:ca.top,w:x0-ca.left,h:y0-ca.top,col:'rgba(106,180,232,0.03)'},
+       {x:ca.left,y:y0,w:x0-ca.left,h:ca.bottom-y0,col:'rgba(232,122,106,0.03)'},
+       {x:x0,y:y0,w:ca.right-x0,h:ca.bottom-y0,col:'rgba(232,201,106,0.03)'},
+      ].forEach(f=>{c.fillStyle=f.col;c.fillRect(f.x,f.y,f.w,f.h);});
+      c.strokeStyle='#253025';c.lineWidth=1;c.setLineDash([4,5]);
+      c.beginPath();c.moveTo(x0,ca.top);c.lineTo(x0,ca.bottom);c.stroke();
+      c.beginPath();c.moveTo(ca.left,y0);c.lineTo(ca.right,y0);c.stroke();
+      c.setLineDash([2,8]);c.strokeStyle='#1e2a1e';
+      c.beginPath();c.moveTo(ca.left,ca.bottom);c.lineTo(ca.right,ca.top);c.stroke();
+      c.beginPath();c.moveTo(ca.left,ca.top);c.lineTo(ca.right,ca.bottom);c.stroke();
+      c.setLineDash([]);c.font='bold 10px DM Mono';
+      c.fillStyle='rgba(111,207,122,0.25)';c.fillText('Q1',x0+6,ca.top+14);
+      c.fillStyle='rgba(106,180,232,0.25)';c.fillText('Q2',ca.left+6,ca.top+14);
+      c.fillStyle='rgba(232,122,106,0.25)';c.fillText('Q3',ca.left+6,ca.bottom-6);
+      c.fillStyle='rgba(232,201,106,0.25)';c.fillText('Q4',x0+6,ca.bottom-6);
+      c.restore();
+    }
+  };
+}
+function renderDiagramLegend(ings){
+  const l1=document.getElementById('legend1');
+  l1.innerHTML=ings.map(ing=>`<div class="legend-item"><div class="legend-dot" style="background:${QCOLORS[ing.q]}"></div><span>${ing.name} <span style="color:var(--text-dim)">${ing.pct}% ${ing.q}</span></span></div>`).join('')
+    +`<div class="legend-item"><span style="display:inline-block;width:14px;height:2px;background:#aaa;opacity:.5;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">B — Tendência Estrutural</span></div>
+       <div class="legend-item"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;border:2px solid #cc88ff;background:transparent;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">Bs — Tendência Material</span></div>
+       <div class="legend-item"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;border:2px solid #6ab4e8;background:transparent;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">Bg — Tendência Granulométrica</span></div>
+       <div class="legend-item"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e8c96a;vertical-align:middle;margin-right:4px"></span><span style="color:var(--text-dim);font-size:9px">B★ — Tendência Final</span></div>`;
+}
+let chart1inst=null,chart2inst=null;
+function drawDiagram(m,ings){
+  if(chart1inst)chart1inst.destroy();
+  const ctx=document.getElementById('chart1').getContext('2d');
+  const allPts=[{x:0,y:0},
+    ...ings.map((_,i)=>({x:m.vecs[i][0]/100,y:m.vecs[i][1]/100})),
+    {x:m.Bx,y:m.By},{x:m.Bsx,y:m.Bsy},{x:m.BgX,y:m.BgY},{x:m.BfX,y:m.BfY}];
+  const b=chartBounds(allPts);
+  const ingDS=ings.map((ing,i)=>({
+    label:`${ing.name} ${ing.pct}%`,
+    _q:ing.q, _endX:m.vecs[i][0]/100, _endY:m.vecs[i][1]/100,
+    data:[{x:0,y:0},{x:m.vecs[i][0]/100,y:m.vecs[i][1]/100}],
+    borderColor:QCOLORS[ing.q]+'bb',borderWidth:1.5,
+    pointRadius:[0,5],pointBackgroundColor:QCOLORS[ing.q],showLine:true,tension:0,
+  }));
+  chart1inst=new Chart(ctx,{
+    type:'scatter',
+    data:{datasets:[
+      ...ingDS,
+      {label:'path',_isPath:true,
+       data:[{x:m.Bx,y:m.By},{x:m.BgX,y:m.BgY},{x:m.BfX,y:m.BfY}],
+       borderColor:'#ffffff22',borderDash:[2,5],borderWidth:1,pointRadius:0,showLine:true,tension:.3},
+      {label:'B',_isB:true,
+       data:[{x:m.Bx,y:m.By}],
+       pointRadius:9,pointStyle:'circle',pointBackgroundColor:'transparent',
+       pointBorderColor:'#aaa',pointBorderWidth:2,showLine:false},
+      {label:'Bs',_isBs:true,
+       data:[{x:m.Bsx,y:m.Bsy}],
+       pointRadius:7,pointStyle:'triangle',pointBackgroundColor:'transparent',
+       pointBorderColor:'#cc88ff',pointBorderWidth:2,showLine:false},
+      {label:'Bg',_isBg:true,
+       data:[{x:m.BgX,y:m.BgY}],
+       pointRadius:9,pointStyle:'rect',pointBackgroundColor:'transparent',
+       pointBorderColor:'#6ab4e8',pointBorderWidth:2,showLine:false},
+      {label:'B*',_isBf:true,
+       data:[{x:m.BfX,y:m.BfY}],
+       pointRadius:11,pointStyle:'star',
+       pointBackgroundColor:'#e8c96a',pointBorderColor:'#e8c96a',showLine:false},
+    ]},
+    options:{
+      animation:{duration:300},responsive:true,maintainAspectRatio:false,
+      scales:{
+        x:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:10},maxTicksLimit:9},title:{display:true,text:'← Absorvente  |  Drenante →',color:'#4a5a4a',font:{family:'DM Mono',size:10}},border:{color:'#253025'}},
+        y:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:10},maxTicksLimit:9},title:{display:true,text:'← Orgânico  |  Inorgânico →',color:'#4a5a4a',font:{family:'DM Mono',size:10}},border:{color:'#253025'}},
+      },
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#181b18',borderColor:'#252a25',borderWidth:1,
+          titleColor:'#cdd4cd',bodyColor:'#7a897a',
+          titleFont:{family:'DM Mono'},bodyFont:{family:'DM Mono'},
+          callbacks:{label:ctx=>{const p=ctx.parsed;return`${ctx.dataset.label}: (${p.x.toFixed(3)}, ${p.y.toFixed(3)})`;}}}
+      }
+    },
+    plugins:[makeQuadrantPlugin('q1'),{
+      id:'diagram_labels',
+      afterDraw(chart){
+        const {ctx:c,scales:sc,data}=chart;
+        c.save();
+        data.datasets.forEach((ds,di)=>{
+          if(!ds.showLine||!ds.data||ds.data.length<2) return;
+          if(ds._isPath) return;
+          const p0=ds.data[0],p1=ds.data[ds.data.length-1];
+          const x0=sc.x.getPixelForValue(p0.x),y0=sc.y.getPixelForValue(p0.y);
+          const x1=sc.x.getPixelForValue(p1.x),y1=sc.y.getPixelForValue(p1.y);
+          if(Math.sqrt((x1-x0)**2+(y1-y0)**2)<4) return;
+          const angle=Math.atan2(y1-y0,x1-x0),al=9;
+          const col=QCOLORS[ds._q]||'#fff';
+          c.fillStyle=col;
+          c.beginPath();c.moveTo(x1,y1);
+          c.lineTo(x1-al*Math.cos(angle-.4),y1-al*Math.sin(angle-.4));
+          c.lineTo(x1-al*Math.cos(angle+.4),y1-al*Math.sin(angle+.4));
+          c.closePath();c.fill();
+          if(ds._q){
+            const parts=ds.label.split(' ');
+            const pct=parts.pop();const name=parts.join(' ');
+            const ox=x1>sc.x.getPixelForValue(0)?8:-8;
+            const align=ox>0?'left':'right';
+            c.textAlign=align;
+            c.font='10px DM Mono';c.fillStyle='#cdd4cd';
+            c.fillText(name,x1+ox,y1-5);
+            c.font='9px DM Mono';c.fillStyle='#6a7a6a';
+            c.fillText(pct,x1+ox,y1+6);
+            c.textAlign='left';
+          }
+        });
+        [{lbl:'B',x:m.Bx,y:m.By,col:'#aaaaaa'},{lbl:'Bs',x:m.Bsx,y:m.Bsy,col:'#cc88ff'},{lbl:'Bg',x:m.BgX,y:m.BgY,col:'#6ab4e8'},{lbl:'B*',x:m.BfX,y:m.BfY,col:'#e8c96a'}].forEach(lp=>{
+          const px=sc.x.getPixelForValue(lp.x),py=sc.y.getPixelForValue(lp.y);
+          c.font='bold 11px DM Mono';c.fillStyle=lp.col;
+          c.fillText(lp.lbl,px+14,py-4);
+          c.font='9px DM Mono';c.fillStyle=lp.col+'99';
+          c.fillText(`(${lp.x.toFixed(2)},${lp.y.toFixed(2)})`,px+14,py+7);
+        });
+        c.restore();
+      }
+    }]
+  });
+  const l1=document.getElementById('legend1');
+  renderDiagramLegend(ings);
+}
+function updateDiagram(m, ings){
+  if(!chart1inst) return;
+  const ds = chart1inst.data.datasets;
+  const nIng = ings.length;
+  ings.forEach((ing,i)=>{
+    if(!ds[i]) return;
+    ds[i].label = `${ing.name} ${ing.pct}%`;
+    ds[i].data  = [{x:0,y:0},{x:m.vecs[i][0]/100,y:m.vecs[i][1]/100}];
+  });
+  const pathDS = ds.find(d=>d._isPath);
+  if(pathDS) pathDS.data = [{x:m.Bx,y:m.By},{x:m.BgX,y:m.BgY},{x:m.BfX,y:m.BfY}];
+  const bDS=ds.find(d=>d._isB); if(bDS) bDS.data=[{x:m.Bx,y:m.By}];
+  const bsDS=ds.find(d=>d._isBs); if(bsDS) bsDS.data=[{x:m.Bsx,y:m.Bsy}];
+  const bgDS=ds.find(d=>d._isBg); if(bgDS) bgDS.data=[{x:m.BgX,y:m.BgY}];
+  const bfDS=ds.find(d=>d._isBf); if(bfDS) bfDS.data=[{x:m.BfX,y:m.BfY}];
+  chart1inst.update('none');
+  const l1=document.getElementById('legend1');
+  renderDiagramLegend(ings);
+}
+function setupChart1Drag(m, ings){
+  const canvas = document.getElementById('chart1');
+  if(canvas._dragHandler){ canvas.removeEventListener('mousedown', canvas._dragHandler); }
+  canvas._dragHandler = function(e){
+    if(!chart1inst) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const sc = chart1inst.scales;
+    let hitIdx = -1, hitDist = 99;
+    ings.forEach((ing, i) => {
+      if(!m.vecs||!m.vecs[i]) return;
+      const ex = m.vecs[i][0]/100;
+      const ey = m.vecs[i][1]/100;
+      const px = sc.x.getPixelForValue(ex);
+      const py = sc.y.getPixelForValue(ey);
+      const d = Math.sqrt((mx-px)**2 + (my-py)**2);
+      if(d < 14 && d < hitDist){ hitDist=d; hitIdx=i; }
+    });
+    if(hitIdx < 0) return;
+    e.preventDefault();
+    _isDragging = true;
+    const startX = e.clientX;
+    const startPct = ings[hitIdx].pct;
+    const q = ings[hitIdx].q;
+    let lastPct = startPct;
+    canvas.style.cursor = 'ew-resize';
+    const onMove = ev => {
+      const dx = ev.clientX - startX;
+      let newPct = Math.round(Math.max(1, Math.min(99, startPct + dx * 0.2)));
+      if(newPct === lastPct) return;
+      const diff = newPct - lastPct;
+      lastPct = newPct;
+      const others = ings.filter((_,j) => j !== hitIdx);
+      const otherTotal = others.reduce((s,o) => s + o.pct, 0);
+      if(otherTotal <= 0){
+        // 1 ingrediente: mantém sempre 100%, drag não altera pct mas roda o modelo
+        ings[hitIdx].pct = 100;
+        renderIngredients();
+        updateTotal();
+        liveRecalc();
+        return;
+      }
+      ings[hitIdx].pct = newPct;
+      let remaining = 100 - newPct;
+      let runningSum = 0;
+      others.forEach((o, k) => {
+        if(k === others.length-1){
+          o.pct = Math.max(1, remaining - runningSum);
+        } else {
+          const share = Math.round(o.pct / otherTotal * remaining);
+          o.pct = Math.max(1, share);
+          runningSum += o.pct;
+        }
+      });
+      renderIngredients();
+      updateTotal();
+      liveRecalc();
+    };
+    const onUp = () => {
+      _isDragging = false;
+      canvas.style.cursor = '';
+      if(ingredients.length===1) ingredients[0].pct=100;
+      const mFinal = computeModel(ingredients);
+      drawDiagram(mFinal, ingredients);
+      setupChart1Drag(mFinal, ingredients);
+      updateSensitivity(mFinal, ingredients);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+  canvas.addEventListener('mousedown', canvas._dragHandler);
+  if(canvas._hoverHandler){ canvas.removeEventListener('mousemove', canvas._hoverHandler); }
+  canvas._hoverHandler = function(e){
+    if(!chart1inst) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const sc = chart1inst.scales;
+    let near = false;
+    ings.forEach((ing, i) => {
+      const px = sc.x.getPixelForValue(m.vecs[i][0]/100);
+      const py = sc.y.getPixelForValue(m.vecs[i][1]/100);
+      if(Math.sqrt((mx-px)**2+(my-py)**2) < 14) near = true;
+    });
+    canvas.style.cursor = near ? 'ew-resize' : '';
+  };
+  canvas.addEventListener('mousemove', canvas._hoverHandler);
+}
+function computeArrows(m,ings){
+  return ings.map((ing,idx)=>{
+    const mod=ings.map((x,j)=>{
+      if(j===idx)return{...x,pct:x.pct+10};
+      const denom=100-ing.pct; const sub=denom>0?x.pct/denom*10:0; return{...x,pct:Math.max(0,x.pct-sub)};
+    });
+    const mn=computeModel(mod);
+    const dx=mn.BfX-m.BfX,dy=mn.BfY-m.BfY;
+    return{name:ing.name,pct:ing.pct,q:ing.q,idx:idx,dx,dy,mag:Math.sqrt(dx**2+dy**2)};
+  });
+}
+function drawSensitivity(m,ings){
+  if(chart2inst)chart2inst.destroy();
+  const ctx=document.getElementById('chart2').getContext('2d');
+  const arrows=computeArrows(m,ings);
+  const maxMag=Math.max(...arrows.map(a=>a.mag),0.001);
+  const SCALE=Math.min(0.55/maxMag,15);
+  const allPts=[{x:m.BfX,y:m.BfY},...arrows.map(a=>({x:m.BfX+a.dx*SCALE,y:m.BfY+a.dy*SCALE}))];
+  const b=chartBounds(allPts);
+  chart2inst=new Chart(ctx,{
+    type:'scatter',
+    data:{datasets:[
+      {label:'B*',data:[{x:m.BfX,y:m.BfY}],pointRadius:12,pointStyle:'star',
+       pointBackgroundColor:'#e8c96a',pointBorderColor:'#e8c96a',showLine:false},
+      ...arrows.map(a=>({
+        label:`+10% ${a.name}`,_arrow:a,
+        data:[{x:m.BfX,y:m.BfY},{x:m.BfX+a.dx*SCALE,y:m.BfY+a.dy*SCALE}],
+        borderColor:QCOLORS[a.q],borderWidth:2.5,
+        pointRadius:[0,5],pointBackgroundColor:QCOLORS[a.q],showLine:true,
+      }))
+    ]},
+    options:{
+      animation:{duration:400},responsive:true,maintainAspectRatio:false,
+      onClick(evt, elements){
+        if(!elements.length) return;
+        const ds=chart2inst.data.datasets[elements[0].datasetIndex];
+        if(!ds._arrow) return;
+        const idx=ds._arrow.idx;
+        if(idx==null) return;
+        const bump=10;
+        const cur=ingredients[idx].pct;
+        const newPct=Math.min(99, cur+bump);
+        const diff=newPct-cur;
+        const others=ingredients.filter((_,j)=>j!==idx);
+        const otherTotal=others.reduce((s,o)=>s+o.pct,0);
+        if(otherTotal<=0) return;
+        ingredients[idx].pct=newPct;
+        others.forEach(o=>{ o.pct=Math.max(1,Math.round(o.pct*(1-diff/otherTotal))); });
+        const total=ingredients.reduce((s,i)=>s+i.pct,0);
+        ingredients[idx].pct+=100-total;
+        renderIngredients(); updateTotal(); liveRecalc();
+        const canvas=document.getElementById('chart2');
+        canvas.style.outline='2px solid '+QCOLORS[ds._arrow.q];
+        setTimeout(()=>canvas.style.outline='',400);
+      },
+      onHover(evt,elements){
+        document.getElementById('chart2').style.cursor=elements.length&&chart2inst.data.datasets[elements[0].datasetIndex]._arrow?'pointer':'default';
+      },
+      scales:{
+        x:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:10},maxTicksLimit:9},title:{display:true,text:'← Absorvente  |  Drenante →',color:'#4a5a4a',font:{family:'DM Mono',size:10}},border:{color:'#253025'}},
+        y:{min:b.min,max:b.max,grid:{color:'#1e261e'},ticks:{color:'#6a7a6a',font:{family:'DM Mono',size:10},maxTicksLimit:9},title:{display:true,text:'← Orgânico  |  Inorgânico →',color:'#4a5a4a',font:{family:'DM Mono',size:10}},border:{color:'#253025'}},
+      },
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#181b18',borderColor:'#252a25',borderWidth:1,
+          titleColor:'#cdd4cd',bodyColor:'#7a897a',
+          titleFont:{family:'DM Mono'},bodyFont:{family:'DM Mono'},
+          callbacks:{label:ctx=>{const a=ctx.dataset._arrow;if(a)return[`${'clique para +10%'} · ${a.name} (${a.pct}%)`,`ΔX=${a.dx.toFixed(3)}  ΔY=${a.dy.toFixed(3)}`,`|Δ|=${a.mag.toFixed(3)}`];return ctx.dataset.label;}}}
+      }
+    },
+    plugins:[makeQuadrantPlugin('q2'),{
+      id:'sens_labels',
+      beforeDraw(chart){
+        const {ctx:c,chartArea:ca,scales:sc}=chart;
+        const x0=sc.x.getPixelForValue(0),y0=sc.y.getPixelForValue(0);
+        c.save();c.font='9px DM Mono';
+        c.fillStyle='rgba(111,207,122,0.2)';c.fillText('→ mais drenante',x0+5,ca.top+13);
+        c.fillStyle='rgba(232,122,106,0.2)';c.fillText('← mais absorvente',ca.left+5,ca.bottom-5);
+        c.fillStyle='rgba(106,180,232,0.2)';c.fillText('↑ mais inorgânico',ca.left+5,y0-5);
+        c.fillStyle='rgba(232,201,106,0.2)';c.fillText('↓ mais orgânico',x0+5,ca.bottom-5);
+        c.restore();
+      },
+      afterDraw(chart){
+        const {ctx:c,scales:sc,data}=chart;
+        c.save();
+        const bStar=data.datasets[0]&&data.datasets[0].data[0];
+        if(!bStar){c.restore();return;}
+        const x0=sc.x.getPixelForValue(bStar.x),y0=sc.y.getPixelForValue(bStar.y);
+        data.datasets.forEach(ds=>{
+          if(!ds.showLine||!ds._arrow) return;
+          const a=ds._arrow;
+          const tip=ds.data[ds.data.length-1];
+          const x1=sc.x.getPixelForValue(tip.x),y1=sc.y.getPixelForValue(tip.y);
+          const dist=Math.sqrt((x1-x0)**2+(y1-y0)**2);
+          if(dist<3)return;
+          const angle=Math.atan2(y1-y0,x1-x0),al=10;
+          c.fillStyle=QCOLORS[a.q];
+          c.beginPath();c.moveTo(x1,y1);
+          c.lineTo(x1-al*Math.cos(angle-.4),y1-al*Math.sin(angle-.4));
+          c.lineTo(x1-al*Math.cos(angle+.4),y1-al*Math.sin(angle+.4));
+          c.closePath();c.fill();
+          const ox=x1-x0>0?9:-9;
+          c.textAlign=ox>0?'left':'right';
+          c.font='10px DM Mono';c.fillStyle='#cdd4cd';
+          c.fillText(a.name,x1+ox,y1+(y1-y0>0?13:-5));
+          c.font='9px DM Mono';c.fillStyle='#6a7a6a';
+          c.fillText(`Δ(${a.dx.toFixed(2)},${a.dy.toFixed(2)})`,x1+ox,y1+(y1-y0>0?24:6));
+          c.textAlign='left';
+        });
+        c.font='bold 11px DM Mono';c.fillStyle='#e8c96a';
+        c.fillText('B*',x0+16,y0-10);
+        c.restore();
+      }
+    }]
+  });
+  const arrows2=computeArrows(m,ings);
+  const l2=document.getElementById('legend2');
+  l2.innerHTML=arrows2.map(a=>{
+    const d=a.dx>0.005?('→dren'):a.dx<-0.005?('←abs'):'—';
+    const o=a.dy>0.005?('↑inorg'):a.dy<-0.005?('↓org'):'—';
+    return`<div class="legend-item"><div class="legend-line" style="background:${QCOLORS[a.q]}"></div><span>${a.name} <span style="color:var(--text-dim)">${d} ${o} |Δ|=${a.mag.toFixed(3)}</span></span></div>`;
+  }).join('');
+}
+function updateSensitivity(m, ings){
+  if(!chart2inst) return;
+  const arrows = computeArrows(m, ings);
+  const maxMag = Math.max(...arrows.map(a=>a.mag), 0.001);
+  const SCALE  = Math.min(0.55/maxMag, 15);
+  const ds = chart2inst.data.datasets;
+  ds[0].data = [{x:m.BfX, y:m.BfY}];
+  arrows.forEach((a,i)=>{
+    const d = ds[i+1];
+    if(!d) return;
+    d.label  = `+10% ${a.name}`;
+    d._arrow = a;
+    d.data   = [{x:m.BfX, y:m.BfY}, {x:m.BfX+a.dx*SCALE, y:m.BfY+a.dy*SCALE}];
+  });
+  const allPts=[{x:m.BfX,y:m.BfY},...arrows.map(a=>({x:m.BfX+a.dx*SCALE,y:m.BfY+a.dy*SCALE}))];
+  const b = chartBounds(allPts);
+  chart2inst.options.scales.x.min = b.min;
+  chart2inst.options.scales.x.max = b.max;
+  chart2inst.options.scales.y.min = b.min;
+  chart2inst.options.scales.y.max = b.max;
+  chart2inst.update('none');
+  const l2=document.getElementById('legend2');
+  l2.innerHTML=arrows.map(a=>{
+    const d=a.dx>0.005?('→dren'):a.dx<-0.005?('←abs'):'—';
+    const o=a.dy>0.005?('↑inorg'):a.dy<-0.005?('↓org'):'—';
+    return`<div class="legend-item"><div class="legend-line" style="background:${QCOLORS[a.q]}"></div><span>${a.name} <span style="color:var(--text-dim)">${d} ${o} |Δ|=${a.mag.toFixed(3)}</span></span></div>`;
+  }).join('');
+}
+function getBandDisplayIprox(v) {
+  // Iprox: 0=neutro(C4), +1=ideal(C7) → mapeia C4..C7 na escala G normal
+  if (v == null) return { dispClass: null };
+  if (v >= 0.67) return { dispClass: 7 };
+  if (v >= 0.38) return { dispClass: 6 };
+  if (v >= 0.13) return { dispClass: 5 };
+  return { dispClass: 4 };
+}
+function renderResults(m,ings){
+  const qB=quadrantOf(m.Bx,m.By),qBg=quadrantOf(m.BgX,m.BgY),qBf=quadrantOf(m.BfX,m.BfY);
+  document.getElementById('summaryCards').innerHTML=`
+    <div class="result-card">
+      <div class="rlabel">Tendência Estrutural</div>
+      <div class="rcoords">(${m.Bx.toFixed(3)}, ${m.By.toFixed(3)})</div>
+      <span class="qtag" style="background:${QBG[qB]};color:${QCOLORS[qB]};border:1px solid ${QBORD[qB]}">${qB} — ${quadrantLabel(qB)}</span>
+    </div>
+    <div class="result-card">
+      <div class="rlabel">Tendência Granulométrica</div>
+      <div class="rcoords">(${m.BgX.toFixed(3)}, ${m.BgY.toFixed(3)})</div>
+      <div class="rsub">${m.Ig!=null?`Ig=${m.Ig.toFixed(3)} · GD=${m.GD.toFixed(2)}mm · GA=${m.GA.toFixed(2)}mm · ΔX=${m.dXg.toFixed(3)}`:Object.keys(m.intraQ||{}).length>0?(()=>{const q=Object.keys(m.intraQ)[0];const iq=m.intraQ[q];const trgVal=iq.GA&&iq.GD?Math.tanh(Math.log(iq.GA/iq.GD)):null;return`TRG(${q})=${trgVal!=null?trgVal.toFixed(3):"—"} · GD=${iq.GD!=null?iq.GD.toFixed(2):"—"}mm · GA=${iq.GA!=null?iq.GA.toFixed(2):"—"}mm`;})():'—'}</div>
+      <span class="qtag" style="background:${QBG[qBg]};color:${QCOLORS[qBg]};border:1px solid ${QBORD[qBg]}">${qBg} — ${quadrantLabel(qBg)}</span>
+    </div>
+    <div class="result-card">
+      <div class="rlabel">Tendência Final</div>
+      <div class="rcoords">(${m.BfX.toFixed(3)}, ${m.BfY.toFixed(3)})</div>
+      <div class="rsub">Rd=${m.Rd.toFixed(3)} · Rd_ef=${m.RdEf.toFixed(3)} · Δ=(${m.dXd.toFixed(3)},${m.dYd.toFixed(3)})</div>
+      <span class="qtag" style="background:${QBG[qBf]};color:${QCOLORS[qBf]};border:1px solid ${QBORD[qBf]}">${qBf} — ${quadrantLabel(qBf)}</span>
+    </div>`;
+  const qOrder=['Q1','Q2','Q3','Q4'];
+  let calcRows='';
+  qOrder.forEach(q=>{
+    const qIngs=ings.map((ing,i)=>({...ing,vec:m.vecs[i]})).filter(x=>x.q===q);
+    if(!qIngs.length) return;
+    const totalPct=qIngs.reduce((s,x)=>s+x.pct,0);
+    const avgGran=qIngs.some(x=>x.gran!=null)?qIngs.filter(x=>x.gran!=null).reduce((s,x)=>s+x.gran*x.pct,0)/qIngs.filter(x=>x.gran!=null).reduce((s,x)=>s+x.pct,0):null;
+    const avgVx=qIngs.reduce((s,x)=>s+x.vec[0]*x.pct,0)/totalPct;
+    const avgVy=qIngs.reduce((s,x)=>s+x.vec[1]*x.pct,0)/totalPct;
+    calcRows+=`<tr style="background:${QBG[q]};border-top:2px solid ${QBORD[q]}">
+      <td colspan="2" style="color:${QCOLORS[q]};font-size:10px;letter-spacing:1px;font-weight:600;padding:6px 11px">
+        ${q} — ${quadrantLabel(q)}</td>
+      <td style="text-align:right;color:${QCOLORS[q]};font-weight:600">${totalPct}%</td>
+      <td style="text-align:right;color:var(--text-dim);font-size:10px">${avgGran!=null?'⌀ '+avgGran.toFixed(1)+'mm':'—'}</td>
+      <td style="text-align:right;color:${avgVx>=0?'#6fcf7a':'#e87a6a'};font-weight:600">${avgVx>=0?'+':''}${avgVx.toFixed(1)}</td>
+      <td style="text-align:right;color:${avgVy>=0?'#6fcf7a':'#e87a6a'};font-weight:600">${avgVy>=0?'+':''}${avgVy.toFixed(1)}</td>
+    </tr>`;
+    qIngs.forEach(x=>{
+      calcRows+=`<tr style="opacity:.85">
+        <td style="padding-left:20px;color:var(--text-dim);font-size:10px">↳</td>
+        <td style="font-size:11px">${x.name}</td>
+        <td style="text-align:right;font-size:11px">${x.pct}%</td>
+        <td style="text-align:right;font-size:11px;color:var(--text-dim)">${x.gran!=null?x.gran+'mm':'—'}</td>
+        <td style="text-align:right;font-size:11px;color:${x.vec[0]>=0?'#6fcf7a':'#e87a6a'}">${x.vec[0]>=0?'+':''}${x.vec[0].toFixed(1)}</td>
+        <td style="text-align:right;font-size:11px;color:${x.vec[1]>=0?'#6fcf7a':'#e87a6a'}">${x.vec[1]>=0?'+':''}${x.vec[1].toFixed(1)}</td>
+      </tr>`;
+    });
+  });
+  const bRows=[
+    {lbl:'B — Baricentro',x:m.Bx,y:m.By,col:'#aaaaaa',sub:'média ponderada'},
+    {lbl:'Bg — Correção Gran.',x:m.BgX,y:m.BgY,col:'#6ab4e8',sub:`ΔX=${m.dXg!=null?m.dXg.toFixed(3):'—'}`},
+    {lbl:'B* — Final',x:m.BfX,y:m.BfY,col:'#e8c96a',sub:`Δ=(${m.dXd.toFixed(3)},${m.dYd.toFixed(3)})`},
+  ].map(b=>`<tr style="background:var(--surface)">
+    <td colspan="2" style="color:${b.col};font-size:10px;font-weight:600;letter-spacing:.5px">${b.lbl}</td>
+    <td style="text-align:right;color:var(--text-dim);font-size:10px">${b.sub}</td>
+    <td></td>
+    <td style="text-align:right;color:${b.x>=0?'#6fcf7a':'#e87a6a'};font-weight:600">${b.x>=0?'+':''}${b.x.toFixed(3)}</td>
+    <td style="text-align:right;color:${b.y>=0?'#6fcf7a':'#e87a6a'};font-weight:600">${b.y>=0?'+':''}${b.y.toFixed(3)}</td>
+  </tr>`).join('');
+  document.getElementById('calcTableCompo').innerHTML=`<table><thead><tr>
+    <th colspan="2">${'Componente'}</th><th style="text-align:right">%</th>
+    <th style="text-align:right">${'Gran.'}</th><th style="text-align:right">vX</th><th style="text-align:right">vY</th>
+  </tr></thead><tbody>${calcRows}
+    <tr><td colspan="6" style="padding:0;border-top:2px solid var(--border)"></td></tr>
+    ${bRows}
+  </tbody></table>`;
+  // ── Classificação gaussiana 7 classes ──────────────────────────────
+  const GAUSS_LIMITS = [-0.67, -0.38, -0.13, 0.13, 0.38, 0.67];
+  const TRANSITION_BAND = 0.10;
+  function gaussClass(v) {
+    if(v == null) return null;
+    for(let i=0; i<GAUSS_LIMITS.length; i++) if(v < GAUSS_LIMITS[i]) return i+1;
+    return 7;
+  }
+  function gaussTransition(v) {
+    if(v == null) return null;
+    for(let i=0; i<GAUSS_LIMITS.length; i++) {
+      if(Math.abs(v - GAUSS_LIMITS[i]) <= TRANSITION_BAND) return [i+1, i+2];
+    }
+    return null;
+  }
+  function classColor(c) {
+    const colors = ['#e87a6a','#e8a06a','#e8c96a','#cdd4cd','#6fcf7a','#6ab4e8','#a06ae8'];
+    return colors[(c||4)-1] || '#cdd4cd';
+  }
+  const hClass = gaussClass(m.indH);
+  const fClass = gaussClass(m.indF);
+  const gClass = gaussClass(m.indG);
+  const dClass = gaussClass(m.indD);
+  // Transições por classe: C1=borda inferior, C7=borda superior, demais=ambas
+  function getClassTransitions(indicator, cls) {
+    if(!cls) return [];
+    const result = [];
+    if(cls > 1) result.push([cls-1, cls]);   // borda inferior
+    if(cls < 7) result.push([cls, cls+1]);   // borda superior
+    return result.filter(t => getTransitionText(indicator, t) !== null);
+  }
+  function getBandDisplay(v, indicator) {
+    if(v == null) return {dispClass: null, transList: []};
+    const L = GAUSS_LIMITS; // [-0.67,-0.38,-0.13,0.13,0.38,0.67]
+    // C1: abaixo do primeiro limite
+    if(v <= L[0]) return {dispClass: 1, transList: [[1,2]]};
+    // C7: acima do último limite
+    if(v >= L[5]) return {dispClass: 7, transList: [[6,7]]};
+    // Bandas intermediárias: classe = i+2 (a classe à direita do limite L[i])
+    for(let i=0; i<L.length-1; i++) {
+      if(v > L[i] && v <= L[i+1]) return {dispClass: i+2, transList: [[i+1, i+2]]};
+    }
+    return {dispClass: null, transList: []};
+  }
+  const hBand = getBandDisplay(m.indH, 'H');
+  const fBand = getBandDisplay(m.indF, 'F');
+  const gBand = getBandDisplay(m.indG, 'G');
+  const dBand = getBandDisplay(m.indD, 'D');
+  const hDisplayClass = hBand.dispClass;
+  const fDisplayClass = fBand.dispClass;
+  // Idisc in [-1,0] -> C1-C4; Iprox in [0,+1] -> C4-C7
+  // dominante = maior modulo entre os dois
+  const _idisc_abs  = m.Idisc != null ? Math.abs(m.Idisc) : 0;
+  const _iprox_abs  = m.Iprox != null ? m.Iprox : 0;
+  const _hasBoth    = m.Iprox != null && m.Idisc != null;
+  const _idiscDomina = _hasBoth && _idisc_abs >= _iprox_abs;
+  const gDisplayClass = _hasBoth
+    ? (_idiscDomina
+        ? getBandDisplay(m.Idisc, 'G').dispClass
+        : getBandDisplayIprox(m.Iprox).dispClass)
+    : gBand.dispClass;
+  const gDisplayClassSec = _hasBoth
+    ? (_idiscDomina
+        ? getBandDisplayIprox(m.Iprox).dispClass
+        : getBandDisplay(m.Idisc, 'G').dispClass)
+    : null;
+  const gTxt    = getClassText('G', gDisplayClass);
+  const gTxtSec = gDisplayClassSec != null ? getClassText('G', gDisplayClassSec) : null;
+  const dDisplayClass = dBand.dispClass;
+  const hTransList = hBand.transList;
+  const fTransList = fBand.transList;
+  // gTransList deve refletir o gDisplayClass efetivo (pode vir de Iprox ou Idisc)
+  // Só mostra transição em direção ao centro (C4)
+  // C1-C3: transição para cima (→ C4); C5-C7: transição para baixo (→ C4); C4: nenhuma
+  const gTransList = (() => {
+    const cls = gDisplayClass;
+    if (cls == null) return gBand.transList;
+    if (cls < 4)  return [[cls, cls+1]];   // C1→C2, C2→C3, C3→C4
+    if (cls > 4)  return [[cls-1, cls]];   // C4→C5, C5→C6, C6→C7
+    return [];                              // C4: equilíbrio, sem transição
+  })();
+  const dTransList = dBand.transList;
+  function getClassText(indicator, cls) {
+    const texts = {
+      H: {
+        label:  ['Risco de Anóxia','Saturação Persistente','Risco de Hipóxia','Equilíbrio Hidráulico','Drenagem Eficiente','Baixa Retenção Hídrica','Déficit Hídrico Estrutural'],
+        conseq: [
+          'O substrato mantém água em excesso por tempo prolongado, eliminando praticamente todo o oxigênio disponível na zona radicular. As raízes perdem a capacidade de absorver água e nutrientes — o processo de deterioração é rápido e frequentemente irreversível. Esse não é necessariamente um substrato errado: espécies adaptadas a ambientes alagados ou semi-alagados podem prosperar aqui. Para a maioria das espécies de bonsai, porém, é um perfil de risco elevado que exige consciência plena sobre a espécie cultivada.',
+          'A drenagem é lenta e o substrato permanece saturado por períodos prolongados após cada irrigação. O oxigênio chega às raízes em quantidade insuficiente, criando condições de sufocamento gradual. A janela de correção ainda está aberta — ajustes na composição ou granulometria podem melhorar o perfil. Adube com doses menores e maior frequência: em substratos de drenagem ruim, um excesso de nutrientes é difícil de lavar e pode ser fatal.',
+          'O substrato retém água em quantidade moderadamente elevada, reduzindo o oxigênio disponível para as raízes sem chegar ao sufocamento. Espécies sensíveis ao encharcamento podem apresentar crescimento lento ou sinais sutis de estresse — raízes menos ativas, folhas menores, brotações fracas. O perfil ainda é manejável com ajustes na irrigação.',
+          'O substrato equilibra retenção e drenagem de forma adequada para a maioria das espécies. Após a irrigação, o excesso escoa e uma fração útil permanece disponível para as raízes. A margem de segurança é ampla — pequenas variações no clima, na irrigação ou na adubação não comprometem o desempenho. É o perfil de referência para o cultivo de bonsai.',
+          'O substrato drena com facilidade após a irrigação, mantendo a zona radicular bem aerada. Espécies que exigem oxigênio abundante nas raízes — como a maioria das coníferas e muitas espécies tropicais — respondem muito bem a esse perfil. A gestão da rega precisa ser mais ativa: o substrato não acumula reservas hídricas significativas entre uma irrigação e outra.',
+          'O substrato drena tão rapidamente que a disponibilidade de água entre regas é muito limitada. O risco de estresse hídrico é real e constante, especialmente em dias quentes ou com vento. Espécies xerófitas e adaptadas a solos pobres em água podem prosperar nesse perfil — para as demais, o manejo de irrigação torna-se o fator mais crítico do cultivo.',
+          'O substrato não retém água suficiente para sustentar as raízes em condições normais. A lixiviação de nutrientes é intensa e constante — adubos solúveis são lavados rapidamente. Prefira adubos orgânicos sólidos de liberação lenta, que resistem melhor à lavagem e mantêm disponibilidade nutricional por mais tempo. Esse perfil é viável apenas para espécies com alta tolerância à seca e cultivadas com manejo especializado.'
+        ]
+      },
+      F: {
+        label:  ['Substrato Altamente Reativo','Predominância Orgânica Intensa','Tendência Orgânica','Balanço Mineral-Orgânico','Tendência Mineral','Predominância Mineral Intensa','Substrato Inerte'],
+        conseq: [
+          'CTC muito elevada — área superficial das partículas é enorme, adsorção intensa. Doses convencionais acumulam rapidamente em sais e desequilíbrios difíceis de reverter. A correção de pH e desbalanços nutricionais é lenta — o tamponamento forte resiste a ajustes rápidos. A decomposição ativa altera progressivamente o perfil químico. O ciclo de replantio deve ser planejado com antecedência.',
+          'Alta CTC e decomposição ativa. O substrato retém nutrientes com eficiência, mas a transformação química é constante. Correções de pH propagam-se lentamente — ajustes devem ser graduais. O risco de salinização por acúmulo é relevante — reduza doses e aumente a frequência. Em climas quentes a decomposição se acelera, alterando o perfil mais rapidamente do que o esperado.',
+          'CTC moderada-alta com boa atividade biológica. O substrato retém e processa nutrientes com eficiência. Estabilidade ainda presente, mas a fração orgânica exige atenção ao longo do tempo. Adubação equilibrada sem excessos. Monitore sinais de compactação gradual e variações de pH.',
+          'CTC moderada — equilíbrio entre estabilidade estrutural e reatividade química. Perfil de referência para a maioria das espécies: favorece tanto a retenção de nutrientes quanto a previsibilidade do comportamento químico ao longo do tempo. Adubação convencional responde bem.',
+          'CTC moderada-baixa. A fração mineral predomina, conferindo maior estabilidade química. A retenção de nutrientes é menor — adubações frequentes e em doses menores compensam a menor capacidade de tamponamento. Substrato previsível e de comportamento estável.',
+          'CTC baixa. O substrato retém pouco nutriente entre adubações — o que não é absorvido rapidamente tende a ser lixiviado. Adubações frequentes e fracionadas são essenciais. A estabilidade estrutural é alta e a transformação química ao longo do tempo é mínima.',
+          'CTC mínima, sem reatividade química significativa. O substrato funciona como suporte físico — não retém nutrientes, não tampona variações de pH, não sustenta atividade biológica relevante. Toda a nutrição depende integralmente do plano de adubação. Doses normais já podem causar danos — fracione ao máximo. Adubação orgânica sólida de liberação lenta é indispensável como base.'
+        ]
+      },
+      Gp: {
+        label:  ['Incompatibilidade Granulométrica','Compatibilidade Baixa','Compatibilidade Moderada','Compatibilidade Granulométrica Ideal'],
+        conseq: [
+          'A razão entre as granulometrias dos componentes está muito distante do ideal — o comportamento hidráulico real diverge significativamente do previsto pela composição. O indicador H perde confiabilidade. Revise as granulometrias dos componentes antes de qualquer outro ajuste.',
+          'A razão granulométrica entre os componentes está fora da faixa ideal, com impacto perceptível no comportamento hidráulico. O indicador H pode subestimar ou superestimar a retenção real. Ajustes na granulometria dos componentes melhorariam a previsibilidade do substrato.',
+          'A razão granulométrica está próxima do ideal, com desvios moderados. O comportamento hidráulico real é próximo do previsto, mas pequenas correções na granulometria dos componentes aumentariam a fidelidade do indicador H.',
+          'A razão granulométrica entre drenantes e absorventes está na faixa ideal. O comportamento hidráulico real corresponde com fidelidade ao previsto pelo indicador H — o substrato se comporta conforme formulado.'
+        ]
+      },
+      G: {
+        label:  ['Colapso Hidráulico Iminente','Risco de Preenchimento Intergranular','Absorventes Relativamente Finos','Sem Interferência Intergranulométrica','Absorventes Relativamente Grossos','Dispersão Granulométrica Elevada','Escoamento Preferencial Estabelecido'],
+        conseq: [
+          'Efeito concrecionário severo — pequenas partículas absorventes preenchem completamente as áreas intergranulares dos drenantes, eliminando a drenagem funcional. O comportamento real se aproxima de H1 independentemente da composição declarada. O indicador H subestima gravemente a retenção real. Reformulação granulométrica é prioritária antes de qualquer outro ajuste.',
+          'Pequenas partículas absorventes ocupam progressivamente as áreas intergranulares — a drenagem ainda funciona mas já está comprometida. O indicador H subestima a retenção real. Aumente a granulometria dos absorventes ou reduza sua proporção.',
+          'Perda de capacidade hidráulica — partículas finas dos absorventes começam a ocupar os macroporos dos drenantes, reduzindo a drenagem efetiva. O indicador H pode subestimar a retenção real. Monitore compactação progressiva.',
+          'Não há relação intergranulométrica que gere efeito ou interferência na capacidade hidráulica. A capacidade hidráulica real corresponde diretamente ao previsto pela composição — o indicador H pode ser lido sem correção.',
+          'Ganho de capacidade hidráulica — poros maiores nos absorventes favorecem a drenagem e reduzem a capilaridade efetiva. O substrato drena melhor do que a composição isolada sugere. O indicador H pode subestimar a aeração real.',
+          'Grandes diferenças de tamanho entre componentes geram zonas de escoamento preferencial. A água percorre os caminhos de menor resistência — partes do substrato ficam cronicamente secas enquanto outras retêm umidade excessiva.',
+          'Canais preferenciais estabelecidos — áreas intergranulares desocupadas criam vias de escoamento fixas. Zonas secas e saturadas coexistem no mesmo vaso. O indicador H perde validade pois o comportamento real é heterogêneo e imprevisível. Reformulação granulométrica necessária.'
+        ]
+      },
+      D: {
+        label:  ['Transformação Estrutural Intensa','Degradação Rápida','Transformação Gradual Ativa','Estabilidade Moderada','Boa Estabilidade Estrutural','Alta Estabilidade','Inércia Estrutural'],
+        conseq: [
+          'Alta fração orgânica em decomposição ativa — a estrutura se transforma em meses. A decomposição libera ácidos orgânicos, altera o pH e modifica a CTC continuamente. Performance inicial pode ser excelente mas o perfil químico e físico muda antes do esperado. O ciclo de replantio deve ser planejado com antecedência.',
+          'Decomposição em curto prazo altera granulometria, porosidade e drenagem — mas também o pH e a disponibilidade de nutrientes. A fragmentação de partículas orgânicas intensifica o efeito concrecionário progressivamente. Ácidos húmicos liberados podem acidificar o substrato. Monitore compactação, drenagem e pH regularmente.',
+          'Decomposição perceptível ao longo do tempo com alterações físico-químicas acumuladas — queda gradual de pH, aumento transitório de CTC e liberação lenta de nutrientes. A fragmentação granulométrica é lenta o suficiente para não alterar significativamente o perfil G no curto prazo. Em climas quentes a decomposição se acelera. Ajustes periódicos de composição e pH preservam o perfil desejado.',
+          'Transformação lenta com alterações físico-químicas discretas ao longo do tempo. A liberação gradual de nutrientes pela decomposição pode ser benéfica — mas também pode deslocar o pH lentamente. Variações de pH e CTC pouco expressivas. Reposições pontuais são suficientes.',
+          'Fração orgânica pequena — decomposição lenta com impacto físico-químico mínimo. Variações de pH e CTC ao longo do tempo são pouco expressivas. Estrutura e comportamento químico previsíveis por longo prazo.',
+          'Substrato predominantemente mineral — transformações estruturais e físico-químicas mínimas. pH e CTC praticamente estáveis ao longo dos anos. Durabilidade e previsibilidade altas.',
+          'Substrato essencialmente inerte — sem transformação estrutural ou físico-química relevante. pH, CTC e porosidade permanecem estáveis indefinidamente. A formulação inicial determina permanentemente as propriedades do substrato.'
+        ]
+      }
+    };
+    const t = texts[indicator];
+    if(!t || !cls) return {label:'—', conseq:'—'};
+    return {label: t.label[cls-1], conseq: t.conseq[cls-1]};
+  }
+  function getTransitionText(indicator, trans) {
+    if(!trans) return null;
+    const key = `${indicator}${trans[0]}${trans[1]}`;
+    const transTexts = {
+      H12: 'O substrato está no limite onde ainda há oxigênio residual na rizosfera, mas qualquer aumento na retenção — por compactação, chuva intensa ou irrigação excessiva — pode cruzar para a anóxia. A adubação é um fator agravante crítico aqui: o acúmulo de sais em um substrato de drenagem ruim reduz ainda mais o oxigênio disponível e torna a correção muito difícil. Monitore de perto os sinais da planta.',
+      H23: 'O clima do local de cultivo decide o comportamento real nesse limite. Em regiões com chuvas frequentes ou estações úmidas prolongadas, esse perfil se comporta como saturação persistente — risco real de sufocamento. Em climas mais secos, comporta-se como hipóxia leve e manejável. Conhecer o regime climático da sua região é essencial para interpretar corretamente esse resultado.',
+      H34: 'O substrato está a um pequeno passo do equilíbrio ideal — a retenção ainda é levemente elevada, mas a diferença é pequena. Um ajuste pontual na granulometria dos componentes drenantes provavelmente é suficiente para atingir o equilíbrio pleno. Para espécies tolerantes à umidade, esse perfil já é plenamente aceitável sem nenhuma modificação.',
+      H45: 'Uma tendência drenante leve além do equilíbrio — favorável para espécies que apreciam boa aeração. Em condições normais esse perfil é excelente. O ponto de atenção aparece nos extremos climáticos: em verões muito quentes ou locais expostos ao vento, monitore a necessidade de regas adicionais nos dias mais exigentes.',
+      H56: 'A aeração é excelente, mas a retenção está chegando ao seu limite mínimo aceitável. No verão ou em locais de sol pleno, pode ser necessário regar várias vezes ao dia — uma hipóxia momentânea por encharcamento é tão prejudicial quanto o ressecamento . O local de cultivo é tão importante quanto a composição do substrato para avaliar esse resultado.',
+      H67: 'A lixiviação de nutrientes já é relevante nesse perfil — adubos solúveis têm vida curta no substrato. Antes de considerar qualquer reformulação, adapte a adubação: prefira adubos orgânicos sólidos de liberação lenta aplicados com maior frequência. Dependendo da espécie e do manejo, esse ajuste pode ser suficiente para cultivar bem sem alterar o substrato.',
+      F12: 'CTC altíssima — área superficial das partículas é enorme, adsorção intensa. Doses convencionais acumulam rapidamente em sais e desequilíbrios difíceis de reverter. Corrija pH e desbalanços nutricionais de forma gradual — o tamponamento forte resiste a ajustes rápidos.',
+      F23: 'Alta área superficial ainda dita a dinâmica — retenção de nutrientes é forte e correções de pH levam tempo para se propagar. Salinidade acumulada é silenciosa. Calibre doses pela área superficial do substrato e observe a resposta antes de qualquer aumento.',
+      F34: 'Tamponamento eficiente — o substrato absorve variações de pH e concentração salina com boa margem. Erros pontuais são perdoados, mas desequilíbrios nutricionais instalados ainda levam tempo para corrigir dado o tamponamento ativo. Ajustes devem ser graduais.',
+      F45: 'Tamponamento decrescente — variações de pH se propagam com mais rapidez e a área superficial disponível para adsorção já é menor. O risco não é mais salinidade, é nutrição insuficiente por lixiviação crescente. Aumente frequência e calibre doses pela área superficial real do substrato.',
+      F56: 'CTC baixa, área superficial reduzida — pouco tamponamento disponível. Desequilíbrios nutricionais se instalam rápido e resistem à correção por falta de capacidade de adsorção. Adubação orgânica de liberação lenta compensa parcialmente a ausência de reserva química.',
+      F67: 'Área superficial mínima, sem tamponamento real. pH e salinidade respondem diretamente ao que é aplicado. Doses normais já podem causar danos — qualquer falta vira deficiência em dias. Adubação orgânica sólida como base é quase obrigatória.',
+      G12: 'Efeito concrecionário intenso — pequenas partículas absorventes preenchem quase completamente as áreas intergranulares dos drenantes. A estrutura de macroporos está muito comprometida. Revise a granulometria dos absorventes.',
+      G23: 'Preenchimento intergranular em progressão — pequenas partículas absorventes ocupam os espaços entre grãos maiores, reduzindo a drenagem real abaixo do que a composição sugere. O indicador H subestima a retenção. Monitore após irrigações intensas.',
+      G34: 'Efeito concrecionário residual — partículas finas dos absorventes ainda ocupam parcialmente as áreas intergranulares, mas sem comprometer a capacidade hidráulica de forma significativa. Um pequeno ajuste na granulometria dos absorventes eliminaria esse efeito e tornaria o indicador H plenamente fiel ao comportamento real.',
+      G45: 'Equilíbrio com leve ganho hidráulico — as áreas intergranulares estão livres e a drenagem é levemente superior ao que a composição isolada sugere. Perfil favorável para espécies que demandam boa aeração.',
+      G56: 'Ganho hidráulico relevante — absorventes grossos não preenchem as áreas intergranulares e a capilaridade efetiva cai. O escoamento começa a se concentrar em caminhos preferenciais e o umedecimento torna-se menos uniforme.',
+      G67: 'Canais preferenciais estabelecidos — áreas intergranulares desocupadas criam vias de escoamento fixas. Zonas secas e saturadas coexistem no mesmo vaso. O indicador H perde validade pois o comportamento real é heterogêneo.',
+      D12: 'Decomposição intensa fragmenta partículas orgânicas rapidamente — granulometria dos absorventes diminui, intensificando o preenchimento intergranular e deslocando o perfil G para valores negativos. pH cai, CTC oscila. O replantio deve ser antecipado antes que o colapso hidráulico se instale.',
+      D23: 'Fragmentação granulométrica em curso — partículas orgânicas menores aumentam progressivamente a área superficial e o efeito concrecionário. Alterações de pH e CTC já perceptíveis. Monitore compactação e drenagem — sinais físicos precedem os químicos.',
+      D34: 'Decomposição ativa mas com impacto granulométrico ainda controlado. A fragmentação de partículas é lenta o suficiente para não alterar significativamente o perfil G no curto prazo. Ajustes periódicos de composição mantêm o equilíbrio.',
+      D45: 'Transformação lenta — fragmentação granulométrica e alterações físico-químicas discretas ao longo do tempo. Variações de pH e CTC pouco expressivas. Monitoramento anual é suficiente.',
+      D56: 'Fração orgânica pequena — decomposição e fragmentação granulométrica com impacto mínimo no perfil G. Estabilidade física e química de longo prazo sem intervenções frequentes.',
+      D67: 'Transformação estrutural e físico-química praticamente nula. Granulometria, pH e CTC estáveis indefinidamente. A formulação inicial determina permanentemente as propriedades do substrato.',
+    };
+    return transTexts[key] || null;
+  }
+  // Barra visual gaussiana com segmentos coloridos por classe
+  function gaussBar(val, col) {
+    if(val == null) return '<div style="font-size:9px;color:var(--text-dim)">—</div>';
+    const limits = [-1, -0.67, -0.38, -0.13, 0.13, 0.38, 0.67, 1];
+    const colors = ['#e87a6a','#e8a06a','#e8c96a','#cdd4cd','#6fcf7a','#6ab4e8','#a06ae8'];
+    const labels = ['C1','C2','C3','C4','C5','C6','C7'];
+    // Escala exagerada: centro mais largo, extremos comprimidos
+    const weights = [8, 12, 16, 20, 16, 12, 8];
+    const wTotal = weights.reduce((a,b)=>a+b,0);
+    const visualPos = [0];
+    weights.forEach(w => visualPos.push(visualPos[visualPos.length-1] + w/wTotal*100));
+    // Mapeia valor real → posição visual %
+    function toVis(v) {
+      for(let i=0;i<7;i++) {
+        if(v >= limits[i] && v <= limits[i+1]) {
+          const t = (v-limits[i])/(limits[i+1]-limits[i]);
+          return visualPos[i] + t*(visualPos[i+1]-visualPos[i]);
+        }
+      }
+      return v < -1 ? 0 : 100;
+    }
+    const pct = toVis(Math.max(-1, Math.min(1, val)));
+    // Segmentos coloridos (escala exagerada)
+    let segs='', ticks='', lbls='', limitLbls='';
+    for(let i=0;i<7;i++) {
+      const l = visualPos[i].toFixed(2), w = (visualPos[i+1]-visualPos[i]).toFixed(2);
+      const cx = ((visualPos[i]+visualPos[i+1])/2).toFixed(2);
+      segs  += '<div style="position:absolute;left:'+l+'%;width:'+w+'%;height:100%;background:'+colors[i]+';opacity:0.25"></div>';
+      lbls  += '<div style="position:absolute;left:'+cx+'%;transform:translateX(-50%);font-size:8px;font-family:DM Mono,monospace;color:'+colors[i]+';top:0">'+labels[i]+'</div>';
+      if(i>0) ticks += '<div style="position:absolute;left:'+visualPos[i].toFixed(2)+'%;top:0;width:1px;height:100%;background:var(--text-dim);opacity:0.35;z-index:1"></div>';
+    }
+    // Valores dos limites reais abaixo
+    limits.forEach((l,i) => {
+      const x = visualPos[i] !== undefined ? visualPos[i].toFixed(1) : '100';
+      const vp = i===0 ? visualPos[0] : i===7 ? 100 : visualPos[i];
+      const anchor = i===0 ? 'left:0;transform:none' : i===7 ? 'right:0;transform:none;left:auto' : 'left:'+vp.toFixed(1)+'%;transform:translateX(-50%)';
+      limitLbls += '<div style="position:absolute;'+anchor+';font-size:7px;color:var(--text-dim);font-family:DM Mono,monospace;opacity:0.6;top:0">'+l+'</div>';
+    });
+    const ps = pct.toFixed(2);
+    return '<div style="position:relative;margin:18px 0 24px">'
+      +'<div style="font-size:9px;color:'+col+';position:absolute;left:'+ps+'%;transform:translateX(-50%);top:-16px;white-space:nowrap;font-family:DM Mono,monospace;font-weight:600">'+val.toFixed(3)+'</div>'
+      +'<div style="position:relative;height:10px;border-radius:4px;overflow:hidden;border:1px solid var(--border)">'+segs+ticks
+      +'<div style="position:absolute;left:'+ps+'%;top:0;width:2px;height:100%;margin-left:-1px;background:'+col+';z-index:3;box-shadow:0 0 4px '+col+'"></div>'
+      +'</div>'
+      +'<div style="position:relative;height:14px;margin-top:2px">'+lbls+'</div>'
+      +'<div style="position:relative;height:10px;margin-top:1px">'+limitLbls+'</div>'
+      +'</div>';
+  }
+  function dualBar(Iprox, Idisc) {
+    const limits  = [-1, -0.67, -0.38, -0.13, 0.13, 0.38, 0.67, 1];
+    const colors  = ['#e87a6a','#e8a06a','#e8c96a','#cdd4cd','#6fcf7a','#6ab4e8','#a06ae8'];
+    const labels  = ['C1','C2','C3','C4','C5','C6','C7'];
+    const weights = [8, 12, 16, 20, 16, 12, 8];
+    const wTotal  = weights.reduce((a,b)=>a+b,0);
+    const visualPos = [0];
+    weights.forEach(w => visualPos.push(visualPos[visualPos.length-1] + w/wTotal*100));
+    function toVis(v) {
+      for(let i=0;i<7;i++) {
+        if(v >= limits[i] && v <= limits[i+1]) {
+          const t = (v-limits[i])/(limits[i+1]-limits[i]);
+          return visualPos[i] + t*(visualPos[i+1]-visualPos[i]);
+        }
+      }
+      return v < -1 ? 0 : 100;
+    }
+    const posP = toVis(Math.max(0,  Math.min(1,  Iprox))).toFixed(2);  // 0..+1 → direita
+    const posD = toVis(Math.max(-1, Math.min(0,  Idisc))).toFixed(2);  // -1..0 → esquerda
+    // cor do segmento onde cada marcador está posicionado
+    function segColor(v) {
+      for (let i=0;i<7;i++) {
+        if (v >= limits[i] && v <= limits[i+1]) return colors[i];
+      }
+      return '#cdd4cd';
+    }
+    const colP = segColor(Math.max(0,  Math.min(1,  Iprox)));
+    const colD = segColor(Math.max(-1, Math.min(0,  Idisc)));
+    let segs='', ticks='', lbls='', limitLbls='';
+    for(let i=0;i<7;i++) {
+      const l  = visualPos[i].toFixed(2), w = (visualPos[i+1]-visualPos[i]).toFixed(2);
+      const cx = ((visualPos[i]+visualPos[i+1])/2).toFixed(2);
+      segs  += '<div style="position:absolute;left:'+l+'%;width:'+w+'%;height:100%;background:'+colors[i]+';opacity:0.25"></div>';
+      lbls  += '<div style="position:absolute;left:'+cx+'%;transform:translateX(-50%);font-size:8px;font-family:DM Mono,monospace;color:'+colors[i]+';top:0">'+labels[i]+'</div>';
+      if(i>0) ticks += '<div style="position:absolute;left:'+visualPos[i].toFixed(2)+'%;top:0;width:1px;height:100%;background:var(--text-dim);opacity:0.35;z-index:1"></div>';
+    }
+    limits.forEach((l,i) => {
+      const vp     = i===0 ? visualPos[0] : i===7 ? 100 : visualPos[i];
+      const anchor = i===0 ? 'left:0;transform:none' : i===7 ? 'right:0;transform:none;left:auto' : 'left:'+vp.toFixed(1)+'%;transform:translateX(-50%)';
+      limitLbls += '<div style="position:absolute;'+anchor+';font-size:7px;color:var(--text-dim);font-family:DM Mono,monospace;opacity:0.6;top:0">'+l+'</div>';
+    });
+    // Dois marcadores + dois labels flutuantes
+    const markerP = '<div style="position:absolute;left:'+posP+'%;top:0;width:2px;height:100%;margin-left:-1px;background:'+colP+';z-index:3;box-shadow:0 0 4px '+colP+'"></div>';
+    const markerD = '<div style="position:absolute;left:'+posD+'%;top:0;width:2px;height:100%;margin-left:-1px;background:'+colD+';z-index:3;box-shadow:0 0 4px '+colD+'"></div>';
+    const labelP  = '<div style="position:absolute;left:'+posP+'%;transform:translateX(-50%);top:-16px;white-space:nowrap;font-size:8px;font-family:DM Mono,monospace;color:'+colP+';font-weight:600">+'+Iprox.toFixed(2)+'</div>';
+    const labelD  = '<div style="position:absolute;left:'+posD+'%;transform:translateX(-50%);top:-16px;white-space:nowrap;font-size:8px;font-family:DM Mono,monospace;color:'+colD+';font-weight:600">'+Idisc.toFixed(2)+'</div>';
+    return '<div style="position:relative;margin:18px 0 24px">'
+      + labelP + labelD
+      + '<div style="position:relative;height:10px;border-radius:4px;overflow:hidden;border:1px solid var(--border)">'
+      + segs + ticks + markerP + markerD
+      + '</div>'
+      + '<div style="position:relative;height:14px;margin-top:2px">'+lbls+'</div>'
+      + '<div style="position:relative;height:10px;margin-top:1px">'+limitLbls+'</div>'
+      + '</div>';
+  }
+
+  function renderTransitions(indicator, transList, color) {
+    return transList.map(t => {
+      const txt = getTransitionText(indicator, t);
+      if(!txt) return '';
+      return `<div style="margin-top:6px;padding:5px 8px;background:var(--surface);border-radius:4px;border-left:2px solid ${color};font-size:9.5px;color:var(--text-dim);line-height:1.55"><span style="color:${color};font-size:9px;letter-spacing:.5px">↔ C${t[0]}→C${t[1]}</span><br>${txt}</div>`;
+    }).join('');
+  }
+  const hTxt = getClassText('H', hDisplayClass);
+  const fTxt = getClassText('F', fDisplayClass);
+  const dTxt = getClassText('D', dDisplayClass);
+  const hydroLabel = hTxt.label, hydroConseq = hTxt.conseq, hydroColor = classColor(hDisplayClass);
+  const strucLabel = fTxt.label, strucConseq = fTxt.conseq, strucColor = classColor(fDisplayClass);
+  const _granHasData = ings.some(i => i.gran != null && !isNaN(i.gran) && i.gran > 0);
+  const granLabel  = m.indG != null ? gTxt.label
+    : _granHasData ? 'Sem Efeito Intergranulométrico'
+    : 'Granulometria Não Informada';
+  const granConseq = m.indG != null ? gTxt.conseq
+    : _granHasData ? 'Os componentes pertencem à mesma natureza e apresentam granulometria teoricamente equivalente — não há diferença de tamanho entre partículas que gere efeito concrecionário ou escoamento preferencial. A capacidade hidráulica real corresponde diretamente ao previsto pela composição.'
+    : 'Informe a granulometria dos componentes.';
+  const granColor  = m.indG != null ? classColor(gDisplayClass) : 'var(--text-dim)';
+  const degLabel   = dTxt.label, degConseq = dTxt.conseq, degColor = classColor(dDisplayClass);
+  const phaseTxt  = m.BfX > 0.2 ? 'Drenante' : m.BfX < -0.2 ? 'Absorvente' : 'Equilibrado';
+  const structTxt = m.BfY > 0.2 ? 'Inorgânico' : m.BfY < -0.2 ? 'Orgânico' : 'Misto';
+  document.getElementById('interpCard').innerHTML = `
+    <div class="interp-grid">
+      <div class="interp-item" style="border-color:${hydroColor};position:relative">
+        <span class="q-info-btn" onclick="openInterpPopup('hidraulico')" style="position:absolute;top:7px;right:7px">?</span>
+        <div class="ilabel">Comportamento Hidráulico <span style="color:${hydroColor};font-size:9px">· C${hDisplayClass||'—'}</span></div>
+        <div class="ivalue" style="color:${hydroColor};font-size:12px;font-weight:500;margin:4px 0 4px">${hydroLabel}</div>
+        ${gaussBar(m.indH, hydroColor)}
+        <div style="font-size:10px;color:var(--text);line-height:1.65;margin-top:8px">${hydroConseq}</div>
+        ${renderTransitions('H', hTransList, hydroColor)}
+      </div>
+      <div class="interp-item" style="border-color:${strucColor};position:relative">
+        <span class="q-info-btn" onclick="openInterpPopup('fisicoquimica')" style="position:absolute;top:7px;right:7px">?</span>
+        <div class="ilabel">Reatividade Físico-Química <span style="color:${strucColor};font-size:9px">· C${fDisplayClass||'—'}</span></div>
+        <div class="ivalue" style="color:${strucColor};font-size:12px;font-weight:500;margin:4px 0 4px">${strucLabel}</div>
+        ${gaussBar(m.indF, strucColor)}
+        <div style="font-size:10px;color:var(--text);line-height:1.65;margin-top:8px">${strucConseq}</div>
+        ${renderTransitions('F', fTransList, strucColor)}
+      </div>
+      <div class="interp-item" style="border-color:${granColor};position:relative">
+        <span class="q-info-btn" onclick="openInterpPopup('trg')" style="position:absolute;top:7px;right:7px">?</span>
+        <div class="ilabel">Tendência Relativa Granulométrica <span style="color:${granColor};font-size:9px">${m.indG!=null?'· C'+(gDisplayClass||'—'):''}</span></div>
+        <div class="ivalue" style="color:${granColor};font-size:12px;font-weight:500;margin:4px 0 4px">${granLabel}</div>
+        ${(m.Iprox != null && m.Idisc != null) ? dualBar(m.Iprox, m.Idisc) : gaussBar(m.indG, granColor)}
+        <div style="font-size:10px;color:var(--text);line-height:1.65;margin-top:8px">${granConseq}</div>
+
+        ${renderTransitions('G', gTransList, granColor)}
+      </div>
+      <div class="interp-item" style="border-color:${degColor};position:relative">
+        <span class="q-info-btn" onclick="openInterpPopup('degradabilidade')" style="position:absolute;top:7px;right:7px">?</span>
+        <div class="ilabel">Potencial de Degradabilidade <span style="color:${degColor};font-size:9px">· C${dDisplayClass||'—'}</span></div>
+        <div class="ivalue" style="color:${degColor};font-size:12px;font-weight:500;margin:4px 0 4px">${degLabel}</div>
+        ${gaussBar(m.indD, degColor)}
+        <div style="font-size:10px;color:var(--text);line-height:1.65;margin-top:8px">${degConseq}</div>
+        ${renderTransitions('D', dTransList, degColor)}
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:9px 12px;background:var(--surface);border-radius:5px;border-left:3px solid var(--border);font-size:9.5px;color:var(--text-dim);line-height:1.65">
+      <span style="color:var(--amber);letter-spacing:.5px;font-size:9px;text-transform:uppercase">⚠ leitura conjunta</span><br>
+      Os quatro painéis podem apresentar características parcialmente contrastantes — isso é esperado e reflete a complexidade real da mistura. Nenhum indicador deve ser interpretado isoladamente. A avaliação final deve considerar simultaneamente o comportamento hidráulico, a reatividade físico-química, a granulometria e o potencial de degradabilidade.
+    </div>`;
+  const arrows=computeArrows(m,ings);
+  const maxMag=Math.max(...arrows.map(a=>a.mag),0.001);
+  const sensRows=[...arrows].sort((a,b)=>b.mag-a.mag).map(a=>{
+    const w=Math.round(a.mag/maxMag*80);
+    const dDir=a.dx>0.005?('+dren'):a.dx<-0.005?('-abs'):'—';
+    const oDir=a.dy>0.005?('+inorg'):a.dy<-0.005?('-org'):'—';
+    return`<tr>
+      <td><span class="qtag" style="background:${QBG[a.q]};color:${QCOLORS[a.q]}">${a.q}</span></td>
+      <td>${a.name}</td><td style="text-align:right">${a.pct}%</td>
+      <td style="text-align:right;color:${a.dx>=0?'#6fcf7a':'#e87a6a'}">${a.dx>=0?'+':''}${a.dx.toFixed(3)}</td>
+      <td style="text-align:right;color:${a.dy>=0?'#6fcf7a':'#e87a6a'}">${a.dy>=0?'+':''}${a.dy.toFixed(3)}</td>
+      <td style="text-align:right;color:var(--text-dim)">${dDir}</td>
+      <td style="text-align:right;color:var(--text-dim)">${oDir}</td>
+      <td><div class="bar-bg" style="width:80px"><div class="bar-fill" style="width:${w}px;background:${QCOLORS[a.q]}"></div></div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('sensTable').innerHTML=`<table><thead><tr>
+    <th>${'Classe'}</th><th>${'Ingrediente'}</th><th style="text-align:right">%</th>
+    <th style="text-align:right">ΔX</th><th style="text-align:right">ΔY</th>
+    <th style="text-align:right">${'Hidráulico'}</th><th style="text-align:right">${'Estrutural'}</th>
+    <th title="Magnitude total do deslocamento: |ΔX| + |ΔY|. Maior = mais controle sobre o substrato.">${'Influência ▸'}</th>
+  </tr></thead><tbody>${sensRows}</tbody></table>
+  <div style="margin-top:6px;padding:6px 10px;font-size:9px;color:var(--text-dim);line-height:1.55;background:var(--surface);border-radius:4px">
+    <strong style="color:var(--text-dim);letter-spacing:.5px">Influência</strong> = magnitude total do deslocamento de B★ ao adicionar +10% do componente (|ΔX| + |ΔY|). Barras maiores indicam maior controle estrutural — esses ingredientes são os mais eficazes para corrigir a formulação.
+  </div>`;
+  const iw=document.getElementById('interpCardWrap');
+  const ic=document.getElementById('chevronInterp');
+  const ih=ic?ic.closest('.collapsible-header'):null;
+  if(iw&&!iw.classList.contains('open')){iw.classList.add('open');if(ic)ic.classList.add('open');if(ih)ih.classList.add('open');}
+
+  // Preservar estado aberto/fechado das seções colapsáveis ao recalcular
+  const wasCalcOpen = document.getElementById('calcTableWrap')?.classList.contains('open');
+  const wasSensOpen = document.getElementById('sensTableWrap')?.classList.contains('open');
+  if(!wasCalcOpen){['calcTableWrap'].forEach(id=>{document.getElementById(id)?.classList.remove('open');});document.getElementById('chevronCalc')?.classList.remove('open');document.querySelector('#calcTableWrap')?.closest('div')?.querySelector('.collapsible-header')?.classList.remove('open');}
+  if(!wasSensOpen){['sensTableWrap'].forEach(id=>{document.getElementById(id)?.classList.remove('open');});document.getElementById('chevronSens')?.classList.remove('open');document.querySelector('#sensTableWrap')?.closest('div')?.querySelector('.collapsible-header')?.classList.remove('open');}
+  const qBnames = {Q1:'Drenante Inorganico',Q2:'Absorvente Inorganico',Q3:'Absorvente Organico',Q4:'Drenante Organico'};
+  const bipHtml=`
+    <h4>${'Leitura dos Baricentros'}</h4>
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr style="background:#e8e8e8">
+        <th style="padding:5px 8px;text-align:left">${'Ponto'}</th>
+        <th style="padding:5px 8px;text-align:center">${'Coordenadas'}</th>
+        <th style="padding:5px 8px;text-align:left">${'Quadrante'}</th>
+        <th style="padding:5px 8px;text-align:left">${'Interpretação'}</th>
+      </tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #ddd">
+          <td style="padding:5px 8px;font-weight:600;color:#555">B</td>
+          <td style="padding:5px 8px;text-align:center;font-family:monospace">(${m.Bx.toFixed(3)}, ${m.By.toFixed(3)})</td>
+          <td style="padding:5px 8px">${quadrantOf(m.Bx,m.By)} — ${qBnames[quadrantOf(m.Bx,m.By)]}</td>
+          <td style="padding:5px 8px;color:#555">${`Posição estrutural bruta — média ponderada dos ${ings.length} componentes`}</td>
+        </tr>
+        <tr style="border-bottom:1px solid #ddd">
+          <td style="padding:5px 8px;font-weight:600;color:#1a5c82">Bg</td>
+          <td style="padding:5px 8px;text-align:center;font-family:monospace">(${m.BgX.toFixed(3)}, ${m.BgY.toFixed(3)})</td>
+          <td style="padding:5px 8px">${quadrantOf(m.BgX,m.BgY)} — ${qBnames[quadrantOf(m.BgX,m.BgY)]}</td>
+          <td style="padding:5px 8px;color:#555">${m.dXg!=null?`Correção granulométrica aplicada: ΔX=${m.dXg.toFixed(3)} ${m.G1!=null&&m.G2!=null?`(G1=${m.G1.toFixed(1)}mm vs G2=${m.G2.toFixed(1)}mm)`:''}`:m.TRG!=null?`TRG: ${m.TRG.toFixed(3)}`:('Sem dados granulométricos suficientes')}</td>
+        </tr>
+        <tr>
+          <td style="padding:5px 8px;font-weight:600;color:#8a6a00">B*</td>
+          <td style="padding:5px 8px;text-align:center;font-family:monospace">(${m.BfX.toFixed(3)}, ${m.BfY.toFixed(3)})</td>
+          <td style="padding:5px 8px">${quadrantOf(m.BfX,m.BfY)} — ${qBnames[quadrantOf(m.BfX,m.BfY)]}</td>
+          <td style="padding:5px 8px;color:#555">${`Posição final após degradabilidade: ΔX=${m.dXd.toFixed(3)}, ΔY=${m.dYd.toFixed(3)} (Rd=${m.Rd.toFixed(2)}, RdEf=${m.RdEf.toFixed(2)})`}</td>
+        </tr>
+      </tbody>
+    </table>`;
+  document.getElementById('pdfInterpBlock').innerHTML=bipHtml;
+  const arrows3=computeArrows(m,ings);
+  const maxMag3=Math.max(...arrows3.map(a=>a.mag),0.001);
+  const sorted3=[...arrows3].sort((a,b)=>b.mag-a.mag);
+  const infRows=sorted3.map(a=>{
+    const w=Math.round(a.mag/maxMag3*160);
+    const dDir=a.dx>0.005?('+ drenante'):a.dx<-0.005?('- absorvente'):('neutro');
+    const oDir=a.dy>0.005?('+ inorganico'):a.dy<-0.005?('- organico'):('neutro');
+    const barColor={Q1:'#1a7a30',Q2:'#1a5c82',Q3:'#7a2020',Q4:'#7a6020'}[a.q];
+    return`<div class="pdf-inf-row">
+      <div style="width:70px;font-size:10px;font-weight:600;color:${barColor}">${a.q}</div>
+      <div style="width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</div>
+      <div style="width:32px;text-align:right;color:#555">${a.pct}%</div>
+      <div style="flex:1;margin:0 8px"><div style="background:#e0e0e0;height:10px;border-radius:3px;overflow:hidden"><div class="pdf-inf-bar" style="width:${w}px;height:10px;background:${barColor}"></div></div></div>
+      <div style="width:90px;font-size:10px;color:#444">${dDir}</div>
+      <div style="width:90px;font-size:10px;color:#444">${oDir}</div>
+      <div style="width:50px;text-align:right;font-size:10px;color:#777">|Δ|=${a.mag.toFixed(3)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('pdfInfluenceBlock').innerHTML=`<h4>${'Influência por Componente (+10%)'}</h4>${infRows}`;
+  // Linha 1: R | Bs
+  const row1col1 = `
+    <div class="index-row" style="border-color:#6fcf7a">
+      <div>
+        <div class="idx-name">Vetor Resultante R</div>
+        <div class="idx-val">(${m.Rx.toFixed(1)}, ${m.Ry.toFixed(1)})</div>
+      </div>
+    </div>`;
+  const row1col2 = `
+    <div class="index-row" style="border-color:#888888">
+      <div>
+        <div class="idx-name">Bs — Baricentro Simples</div>
+        <div class="idx-val">(${m.Bsx.toFixed(3)}, ${m.Bsy.toFixed(3)})</div>
+        <div class="idx-desc">tendência material</div>
+      </div>
+    </div>`;
+
+  // Linha 2: B | Bg
+  const row2col1 = `
+    <div class="index-row" style="border-color:#aaaaaa">
+      <div>
+        <div class="idx-name">Baricentro B</div>
+        <div class="idx-val">(${m.Bx.toFixed(3)}, ${m.By.toFixed(3)})</div>
+        <div class="idx-desc">R normalizado</div>
+      </div>
+    </div>`;
+  const row2col2 = `
+    <div class="index-row" style="border-color:#6ab4e8">
+      <div>
+        <div class="idx-name">Baricentro Bg</div>
+        <div class="idx-val">(${m.BgX.toFixed(3)}, ${m.BgY.toFixed(3)})</div>
+        <div class="idx-desc">ΔXg=${m.dXg>0?'+':''}${m.dXg.toFixed(3)}</div>
+      </div>
+    </div>`;
+
+  // Linha 3: Ig | TRG
+  // Ig: índice granulométrico inter-grupos (Q1 vs Q2/Q3) — só quando há múltiplos quadrantes com granulometria
+  // ── row3: Ig | TRG ──────────────────────────────────────────────────
+  const _igLabel = (() => {
+    const qs = new Set(ingredients.map(i=>i.q));
+    const has = q => qs.has(q);
+    if (has('Q1') && has('Q4') && !has('Q2') && !has('Q3')) return 'Ig = GA(Q4) / GD(Q1) †';
+    if (has('Q1') && !has('Q4')) return 'Ig = GA / GD(Q1)';
+    if (has('Q4') && !has('Q1')) return 'Ig = GA / GD(Q4)';
+    return 'Ig = GA / GD';
+  })();
+  const row3col1 = m.Ig!=null ? `
+    <div class="index-row" style="border-color:#e8c96a">
+      <div>
+        <div class="idx-name">${_igLabel}</div>
+        <div class="idx-val">${m.Ig.toFixed(3)}</div>
+        <div class="idx-desc">GD=${m.GD!=null?m.GD.toFixed(2):'—'}mm · GA=${m.GA!=null?m.GA.toFixed(2):'—'}mm · ΔX=${m.dXg>0?'+':''}${m.dXg.toFixed(3)}</div>
+      </div>
+    </div>` : `
+    <div class="index-row" style="border-color:#e8c96a44">
+      <div>
+        <div class="idx-name">Ig = GA / GD</div>
+        <div class="idx-val" style="font-size:12px;color:var(--text-dim)">—</div>
+        <div class="idx-desc">granulometria incompleta</div>
+      </div>
+    </div>`;
+
+  // TRG: um Icd por quadrante drenante do array icds
+  const icdHtml = (() => {
+    const seen = new Set();
+    return (m.icds||[]).filter(e => {
+      const key = (e.icd!=null?e.icd.toFixed(3):'x')+'_'+(e.G!=null?e.G.toFixed(2):'x');
+      if (seen.has(key)) return false;
+      seen.add(key); return true;
+    }).map(e => {
+      const qs  = (m.icds||[]).filter(x=>(x.icd!=null?x.icd.toFixed(3):'x')===(e.icd!=null?e.icd.toFixed(3):'x')&&(x.G!=null?x.G.toFixed(2):'x')===(e.G!=null?e.G.toFixed(2):'x')).map(x=>x.q).join('+');
+      const status = e.icd>0.7?'estável':e.icd>0.4?'intermediário':'⚠ colapso';
+      const cor    = e.icd<0.5?'var(--red)':e.icd<0.8?'var(--amber)':'var(--text-dim)';
+      return `<div class="idx-desc" style="color:${cor}">${qs}: Icd=${e.icd.toFixed(3)} — ${status} · G=${e.G!=null?e.G.toFixed(2):'—'}mm · limiar=${m.limiar!=null?m.limiar.toFixed(2):'—'}mm</div>`;
+    }).join('');
+  })()
+  // Iprox / Idisc — dois pontos Q1+Q2
+  const iproxIdisc = (m.Iprox != null && m.Idisc != null) ? (() => {
+    const corP = m.Iprox > 0.7 ? 'var(--green,#6acea0)' : m.Iprox > 0.3 ? 'var(--amber)' : 'var(--text-dim)';
+    const corD = m.Idisc < -0.7 ? 'var(--red)' : m.Idisc < -0.3 ? 'var(--amber)' : 'var(--text-dim)';
+    return `<div class="idx-desc" style="color:${corP}">▲ Compatibilidade (Iprox): ${m.Iprox.toFixed(3)} — ${m.Iprox>0.7?'ótimo':m.Iprox>0.3?'moderado':'baixo'}</div>`
+         + `<div class="idx-desc" style="color:${corD}">▼ Discrepância (Idisc): ${m.Idisc.toFixed(3)} — ${m.Idisc<-0.7?'⚠ elevada':m.Idisc<-0.3?'moderada':'baixa'}</div>`;
+  })() : '';
+  const intraHtml = (()=>{
+    const qs = Object.keys(m.intraQ||{});
+    if(!qs.length) return '';
+    return qs.map(q => {
+      const iq = m.intraQ[q];
+      if(!iq || (iq.Icd==null && (iq.GA==null||iq.GD==null))) return '';
+      const trgDisp = (iq.GA&&iq.GD) ? Math.tanh(Math.log(iq.GD/iq.GA)) : null;
+      const cor    = trgDisp==null?'var(--text-dim)':trgDisp>0.38?'var(--red)':trgDisp>0.13?'var(--amber)':'var(--text-dim)';
+      const status = trgDisp==null?'—':trgDisp>0.38?'dispersão elevada':trgDisp>0.13?'dispersão moderada':'equilibrado';
+      const gaStr  = iq.GA!=null ? `GA=${iq.GA.toFixed(2)}mm` : '';
+      const gdStr  = iq.GD!=null ? `GD=${iq.GD.toFixed(2)}mm` : '';
+      const trgStr = trgDisp!=null ? ` · TRG=${trgDisp.toFixed(3)}` : '';
+      const granParts = [gaStr, gdStr].filter(Boolean).join(' · ');
+      return `<div class="idx-desc" style="color:${cor}">${status} · ${iq.n} ingred. · ${granParts}${trgStr}</div>`;
+    }).join('');
+  })();
+  const trgAplica = m.indG != null;
+  const row3col2 = trgAplica ? `
+    <div class="index-row" style="border-color:#e8c96a">
+      <div>
+        <div class="idx-name">TRG — Interpolação</div>
+        <div class="idx-val" style="font-size:11px;color:${m.indG!=null?(m.indG<0?'#e87a6a':m.indG>0?'#6ab4e8':'#cdd4cd'):'var(--text-dim)'}">${m.indG!=null?m.indG.toFixed(3):'—'}</div>
+        ${icdHtml}
+        ${m.Fmono != null ? `<div class="idx-desc" style="color:${m.Fmono>0.5?'var(--red)':m.Fmono>0.2?'var(--amber)':'var(--text-dim)'}">Fmono = ${m.Fmono.toFixed(3)} — fator de dispersão intra-quadrante</div>` : ''}
+        ${intraHtml}
+      </div>
+    </div>` : `
+    <div class="index-row" style="border-color:#e8c96a44">
+      <div>
+        <div class="idx-name">TRG — Interpolação</div>
+        <div class="idx-val" style="font-size:12px;color:var(--text-dim)">—</div>
+        <div class="idx-desc"></div>
+      </div>
+    </div>`;
+
+  // Linha 4: Rd | B*
+  const row4col1 = `
+    <div class="index-row" style="border-color:#e87a6a">
+      <div>
+        <div class="idx-name">Rd = ${m.Oa>0?'Oa':'Od'} / S</div>
+        <div class="idx-val">${m.Rd.toFixed(3)}</div>
+        <div class="idx-desc">${m.Oa>0?`Oa=${m.Oa.toFixed(0)}%`:`Od=${m.Od.toFixed(0)}%`} · S=${m.S.toFixed(0)}% · Rd_ef=${m.RdEf.toFixed(3)}</div>
+      </div>
+    </div>`;
+  const row4col2 = `
+    <div class="index-row" style="border-color:#e8c96a">
+      <div>
+        <div class="idx-name">Baricentro Final B*</div>
+        <div class="idx-val">(${m.BfX.toFixed(3)}, ${m.BfY.toFixed(3)})</div>
+        <div class="idx-desc">${qBf} — ${quadrantLabel(qBf)}</div>
+      </div>
+    </div>`;
+
+  // Intercalar linha a linha para o grid 2 colunas respeitar a ordem
+  document.getElementById('calcTable').innerHTML =
+    row1col1 + row1col2 +
+    row2col1 + row2col2 +
+    row3col1 + row3col2 +
+    row4col1 + row4col2;
+  document.getElementById('sidebarCompo').style.display='block';
+
+  document.getElementById('compoList').innerHTML=[
+    {q:'Q1',pct:m.Id,col:'#6fcf7a'},
+    {q:'Q2',pct:m.Ia,col:'#6ab4e8'},
+    {q:'Q3',pct:m.Oa,col:'#e87a6a'},
+    {q:'Q4',pct:m.Od,col:'#e8c96a'},
+  ].map(d=>`<div style="display:flex;align-items:center;gap:8px;font-size:10px">
+    <span style="color:${d.col};min-width:22px;font-size:9px;letter-spacing:1px">${d.q}</span>
+    <div class="bar-bg" style="flex:1;height:6px"><div class="bar-fill" style="width:${d.pct}%;background:${d.col}"></div></div>
+    <span style="color:var(--text-dim);min-width:30px;text-align:right">${d.pct.toFixed(0)}%</span>
+  </div>`).join('');
+}
+function getPopupData() {
+  return {
+  Q1: {
+    color: '#6fcf7a', bg: 'rgba(111,207,122,.12)',
+    tag:   'Q1 — Drenante Mineral',
+    title: 'Drenante Mineral',
+    body: [
+      'Materiais minerais com baixa absorção de água e alta estabilidade estrutural. Formam macroporos permanentes no substrato, garantindo drenagem rápida e aeração contínua — mesmo após vários ciclos de umedecimento e secagem.',
+      'Por serem inertes e estruturalmente estáveis, praticamente não contribuem para a água disponível às plantas. Sua função é essencialmente de suporte físico e manutenção da estrutura da matriz.',
+    ],
+    gran: 'Granulometria típica: 2 – 10 mm',
+    exemplos: 'pedrisco, areia grossa, caco de telha, brita fina, pumice, lava rock, perlita, carvão vegetal de baixa retenção',
+    note: 'O carvão vegetal é inerte — não degrada. Sua classificação depende da relação peso seco/úmido: amostras de baixa retenção hídrica se enquadram em Q1; amostras de alta absorção, em Q2.',
+  },
+  Q2: {
+    color: '#6ab4e8', bg: 'rgba(106,180,232,.12)',
+    tag:   'Q2 — Absorvente Mineral',
+    title: 'Absorvente Mineral',
+    body: [
+      'Materiais minerais que retêm água em micro e mesoporos, contribuindo para o armazenamento hídrico e, em alguns casos, para a troca catiônica (CTC). São quimicamente estáveis e não sofrem degradação ao longo do tempo.',
+      'A classificação neste quadrante é determinada pela relação entre peso seco e peso úmido da amostra: uma grande diferença entre os dois indica alta retenção hídrica. Quando a granulometria real não é conhecida ou o material está pulverizado, adota-se 0,1 mm no modelo.',
+    ],
+    gran: 'Granulometria típica: 0,1 – 5 mm',
+    exemplos: 'akadama, zeólita, diatomita, argilas calcinadas, bentonita, vermiculita, carvão vegetal de alta absorção',
+    note: 'A vermiculita tem alta capacidade de retenção e CTC elevada — comportamento típico de Q2. O carvão vegetal também pode se enquadrar aqui quando apresenta alta absorção de água, pois é inerte e não degrada.',
+  },
+  Q3: {
+    color: '#e87a6a', bg: 'rgba(232,122,106,.12)',
+    tag:   'Q3 — Absorvente Orgânico',
+    title: 'Absorvente Orgânico',
+    body: [
+      'Materiais orgânicos com alta capacidade de absorção de água, grande área superficial e elevada CTC, responsáveis por aumentar a retenção hídrica e a atividade biológica do substrato.',
+      'São estruturalmente menos estáveis que os absorventes minerais e sofrem decomposição progressiva — o que altera gradualmente a estrutura da mistura, reduzindo a aeração e aumentando a compactação ao longo do tempo.',
+    ],
+    gran: 'Granulometria típica: 1 – 6 mm (ou 0,1 mm se pulverizado)',
+    exemplos: 'turfa, sphagnum, fibra de coco, composto orgânico, húmus, casca de arroz in natura',
+    note: 'A casca de arroz in natura preserva estrutura orgânica ativa com alta absorção — Q3. Materiais pulverizados sem granulometria conhecida podem ser representados como 0,1 mm no modelo sem prejuízo ao cálculo.',
+  },
+  Q4: {
+    color: '#e8c96a', bg: 'rgba(232,201,106,.12)',
+    tag:   'Q4 — Drenante Orgânico',
+    title: 'Drenante Orgânico',
+    body: [
+      'Materiais orgânicos que promovem aeração e formação de macroporos no substrato. Embora favoreçam drenagem, apresentam maior umidade residual do que os drenantes minerais (Q1) — a natureza orgânica do material retém mais água mesmo após drenagem completa.',
+      'Com o tempo, podem se decompor e migrar funcionalmente para a fração absorvente, o que o modelo representa como deslocamento do baricentro em direção a Q3.',
+    ],
+    gran: 'Granulometria típica: 3 – 15 mm',
+    exemplos: 'casca de pinus, chips de madeira, bark chips, fibra de coco longa, casca de arroz carbonizada',
+    note: 'A casca de arroz carbonizada se enquadra em Q4: mantém comportamento drenante com umidade residual elevada. Diferente do carvão vegetal — que é completamente inerte — materiais carbonizados de forma incompleta ainda possuem potencial de degradação lenta.',
+  },
+  };
+}
+function openPopup(q) {
+  const d = getPopupData()[q];
+  if (!d) return;
+  const content = document.getElementById('qPopupContent');
+  content.innerHTML = `
+    <div class="q-popup-tag" style="background:${d.bg};color:${d.color};border:1px solid ${d.color}44">${d.tag}</div>
+    <h2>${d.title}</h2>
+    ${d.body.map(p => `<p>${p}</p>`).join('')}
+    <div class="pop-divider"></div>
+    <div class="pop-examples"><span style="color:var(--text-dim);font-size:9px;letter-spacing:1.5px;text-transform:uppercase">Gran. típica &nbsp;</span><span style="color:${d.color}">${d.gran}</span></div>
+    <div class="pop-examples" style="margin-top:6px"><span style="color:var(--text-dim);font-size:9px;letter-spacing:1.5px;text-transform:uppercase">Exemplos &nbsp;</span><span>${d.exemplos}</span></div>
+    <div class="pop-note">${d.note}</div>
+  `;
+  document.getElementById('qPopupOverlay').classList.add('open');
+  document.addEventListener('keydown', handleEsc);
+}
+function closePopup() {
+  document.getElementById('qPopupOverlay').classList.remove('open');
+  document.removeEventListener('keydown', handleEsc);
+}
+function closePopupOutside(e) {
+  if (e.target === document.getElementById('qPopupOverlay')) closePopup();
+}
+function handleEsc(e) { if (e.key === 'Escape') closePopup(); }
+function getInterpPopupData() {
+  return {
+  hidraulico: {
+    color: '#6fcf7a', bg: 'rgba(111,207,122,.12)',
+    tag:   'Comportamento Hidráulico',
+    title: 'Como o substrato se comporta com a água',
+    body: [
+      'O comportamento hidráulico é determinado pelo equilíbrio entre macroporos e microporos na estrutura do substrato. Macroporos — espaços maiores entre as partículas — drenam rapidamente por gravidade e são os principais responsáveis pela aeração da rizosfera. Microporos — espaços capilares dentro e entre partículas menores — retêm água por forças de tensão superficial e representam a reserva hídrica disponível para as raízes.',
+      'O indicador H é calculado a partir da composição do substrato e da granulometria de cada componente. Partículas abaixo de 1mm aumentam progressivamente a proporção de microporos — independentemente da classe do material. Um componente naturalmente drenante a 10mm se comporta de forma completamente diferente do mesmo componente a 0,5mm, que passa a reter água por capilaridade. A quantidade de cada componente também importa: mais volume de material absorvente intensifica o efeito de retenção.',
+      'A escala vai de C1 (anóxia — praticamente sem oxigênio disponível) a C7 (déficit hídrico estrutural — sem reserva hídrica entre regas). C4 representa o equilíbrio ideal para a maioria das espécies de bonsai. O resultado deve ser interpretado em conjunto com o clima local e as exigências hídricas da espécie cultivada — um mesmo substrato pode ser ideal em uma região e problemático em outra.',
+    ],
+    variacoes: [
+      { label: 'C1 — Risco de Anóxia',               texto: 'Saturação prolongada elimina quase todo o oxigênio da rizosfera. Deterioração radicular rápida e frequentemente irreversível. Adequado apenas para espécies adaptadas a ambientes alagados. Adubação em doses muito pequenas e frequentes.' },
+      { label: 'C2 — Saturação Persistente',          texto: 'Drenagem lenta, sufocamento gradual. Correção ainda possível com ajustes de composição ou granulometria. Adube com doses menores e maior frequência — acúmulo de sais agrava o estresse radicular.' },
+      { label: 'C3 — Risco de Hipóxia',               texto: 'Retenção moderadamente elevada. Espécies sensíveis podem apresentar estresse sutil. Em climas úmidos ou chuvosos o risco se intensifica. Manejável com ajustes de irrigação.' },
+      { label: 'C4 — Equilíbrio Hidráulico',          texto: 'Perfil de referência para o cultivo de bonsai. Ampla margem de segurança para variações de clima, irrigação e adubação.' },
+      { label: 'C5 — Drenagem Eficiente',             texto: 'Boa aeração, reservas hídricas limitadas entre regas. Gestão de rega ativa necessária — em climas quentes monitore a demanda hídrica diária.' },
+      { label: 'C6 — Baixa Retenção Hídrica',         texto: 'Disponibilidade hídrica muito limitada. Risco constante de estresse hídrico em dias quentes. Ideal para espécies xerófitas — para as demais, a irrigação é o fator mais crítico do cultivo.' },
+      { label: 'C7 — Déficit Hídrico Estrutural',     texto: 'Sem reserva hídrica estrutural. Lixiviação intensa e constante de nutrientes. Adubação orgânica sólida de liberação lenta é essencial. Viável apenas para espécies com alta tolerância à seca e manejo especializado.' },
+    ],
+    note: 'Em C5, C6 e C7, regas múltiplas ao longo do dia podem ser necessárias no verão — uma hipóxia momentânea por ressecamento é tão prejudicial quanto o encharcamento prolongado.',
+  },
+  fisicoquimica: {
+    color: '#6ab4e8', bg: 'rgba(106,180,232,.12)',
+    tag:   'Natureza Físico-Química',
+    title: 'Reatividade química e estabilidade do substrato',
+    body: [
+      'A natureza físico-química é determinada pelo balanço entre componentes orgânicos e minerais — e pela granulometria de cada um. Componentes orgânicos apresentam alta CTC (capacidade de troca catiônica), retêm nutrientes com força e sustentam atividade biológica ativa. Componentes minerais são quimicamente estáveis, retêm pouco e não se transformam com o tempo.',
+      'A granulometria amplifica esse efeito: partículas menores têm maior área superficial, maior CTC e maior capacidade de adsorção — independentemente da classe do material. Um componente orgânico fino é muito mais reativo do que o mesmo material em grânulos maiores.',
+      'A escala vai de F1 (reatividade extrema — CTC máxima, tamponamento intenso, transformação contínua) a F7 (substrato inerte — sem reatividade química, sem tamponamento, dependência total da adubação). F4 representa o equilíbrio entre estabilidade e reatividade para a maioria das espécies.',
+    ],
+    variacoes: [
+      { label: 'F1 — Substrato Altamente Reativo',     texto: 'CTC muito elevada, forte atividade biológica, transformação química contínua. Doses convencionais acumulam em sais rapidamente. Corrija pH e desbalanços de forma gradual — o tamponamento forte resiste a ajustes rápidos.' },
+      { label: 'F2 — Predominância Orgânica Intensa',  texto: 'Alta CTC e decomposição ativa. Retenção de nutrientes alta mas risco de acúmulo salino relevante. Reduza doses e aumente frequência. Em climas quentes a decomposição altera o perfil mais rapidamente do que o esperado.' },
+      { label: 'F3 — Tendência Orgânica',              texto: 'CTC moderada-alta com boa atividade biológica. Adubação equilibrada sem excessos. Monitore sinais de compactação gradual e variações de pH ao longo do tempo.' },
+      { label: 'F4 — Balanço Mineral-Orgânico',        texto: 'CTC moderada — equilíbrio entre estabilidade e reatividade. Perfil de referência para a maioria das espécies. Adubação convencional responde bem.' },
+      { label: 'F5 — Tendência Mineral',               texto: 'CTC moderada-baixa. Maior estabilidade química com menor retenção de nutrientes. Adubações frequentes em doses menores compensam a menor capacidade de tamponamento.' },
+      { label: 'F6 — Predominância Mineral Intensa',   texto: 'CTC baixa. Pouca retenção de nutrientes entre adubações — o que não é absorvido rapidamente é lixiviado. Adubações fracionadas e frequentes são essenciais.' },
+      { label: 'F7 — Substrato Inerte',                texto: 'CTC mínima, sem reatividade química significativa. Toda a nutrição depende integralmente do plano de adubação. Doses normais já podem causar danos — fracione ao máximo. Adubação orgânica sólida de liberação lenta é indispensável.' },
+    ],
+    note: 'A área superficial das partículas do substrato determina a CTC real — substratos finos retêm e tamponam muito mais do que substratos grossos de mesma composição. Calibre as doses pela área superficial do substrato, não pelo tamanho da planta ou do vaso.',
+  },
+  trg: {
+    color: '#e8c96a', bg: 'rgba(232,201,106,.12)',
+    tag:   'TRG — Tendência Relativa Granulométrica',
+    title: 'Relação entre as granulometrias dos componentes',
+    body: [
+      'A Tendência Relativa Granulométrica avalia a proporção entre o tamanho médio das partículas absorventes e drenantes. Quando os absorventes são muito finos em relação aos drenantes, suas partículas preenchem as áreas intergranulares — o efeito concrecionário reduz a drenagem real abaixo do que a composição sugere. Quando os absorventes são proporcionalmente grossos, a capilaridade efetiva cai e o escoamento pode se concentrar em canais preferenciais.',
+      'O perfil G modifica o comportamento hidráulico real do substrato — o indicador H deve ser sempre interpretado em conjunto com G. Desequilíbrios granulométricos intensos tornam o H pouco confiável como preditor do comportamento real.',
+    ],
+    variacoes: [
+      { label: 'G1 — Colapso Hidráulico Iminente',           texto: 'Efeito concrecionário severo — pequenas partículas absorventes preenchem completamente as áreas intergranulares. Drenagem funcional comprometida. O indicador H subestima gravemente a retenção real.' },
+      { label: 'G2 — Risco de Preenchimento Intergranular',   texto: 'Pequenas partículas absorventes ocupam progressivamente as áreas intergranulares. Drenagem comprometida. Aumente a granulometria dos absorventes ou reduza sua proporção.' },
+      { label: 'G3 — Absorventes Relativamente Finos',        texto: 'Perda de capacidade hidráulica — partículas finas dos absorventes começam a ocupar os macroporos. O indicador H pode subestimar a retenção real. Monitore compactação progressiva.' },
+      { label: 'G4 — Equilíbrio Granulométrico',              texto: 'Granulometrias proporcionais. Comportamento hidráulico previsível e estável — o indicador H reflete com fidelidade o comportamento real.' },
+      { label: 'G5 — Absorventes Relativamente Grossos',      texto: 'Ganho de capacidade hidráulica — poros maiores favorecem a drenagem e reduzem a capilaridade efetiva. O substrato drena melhor do que a composição isolada sugere.' },
+      { label: 'G6 — Dispersão Granulométrica Elevada',       texto: 'Grandes diferenças de tamanho entre componentes geram zonas de escoamento preferencial. Partes do substrato ficam cronicamente secas enquanto outras retêm umidade excessiva.' },
+      { label: 'G7 — Escoamento Preferencial Estabelecido',   texto: 'Canais preferenciais estabelecidos — zonas secas e saturadas coexistem no mesmo vaso. O indicador H perde validade. Reformulação granulométrica necessária.' },
+    ],
+    note: 'O efeito concrecionário é progressivo — substratos com G negativo tendem a piorar com o tempo à medida que partículas finas migram e se acomodam. A decomposição orgânica (D) fragmenta partículas e desloca o perfil G para valores mais negativos ao longo do tempo.',
+  },
+  degradabilidade: {
+    color: '#e87a6a', bg: 'rgba(232,122,106,.12)',
+    tag:   'Potencial de Degradabilidade',
+    title: 'Estabilidade estrutural ao longo do tempo',
+    body: [
+      'O Potencial de Degradabilidade avalia a fração orgânica do substrato e sua tendência à decomposição. A decomposição não altera apenas a estrutura física — fragmenta partículas, intensifica o efeito concrecionário (deslocando o perfil G) e modifica continuamente o pH e a CTC do substrato.',
+      'Substratos com D negativo transformam-se com o tempo: o que foi formulado hoje não é o que estará presente em seis meses. Substratos com D positivo mantêm suas propriedades por anos. O perfil D deve ser interpretado em conjunto com G — a decomposição é o principal mecanismo de deslocamento granulométrico ao longo do tempo.',
+    ],
+    variacoes: [
+      { label: 'D1 — Transformação Estrutural Intensa',  texto: 'Decomposição ativa em meses — libera ácidos orgânicos, altera pH e CTC continuamente. Performance inicial pode ser excelente mas o perfil muda rapidamente. O ciclo de replantio deve ser planejado com antecedência.' },
+      { label: 'D2 — Degradação Rápida',                texto: 'Fragmentação granulométrica em curto prazo intensifica o efeito concrecionário. pH cai, CTC oscila. Monitore compactação, drenagem e pH regularmente.' },
+      { label: 'D3 — Transformação Gradual Ativa',       texto: 'Decomposição perceptível com alterações físico-químicas acumuladas. A fragmentação de partículas é lenta mas progressiva. Em climas quentes a decomposição se acelera. Ajustes periódicos preservam o perfil.' },
+      { label: 'D4 — Estabilidade Moderada',             texto: 'Transformação lenta com alterações físico-químicas discretas. A liberação gradual de nutrientes pode ser benéfica — mas pode deslocar o pH lentamente. Reposições pontuais são suficientes.' },
+      { label: 'D5 — Boa Estabilidade Estrutural',       texto: 'Fração orgânica pequena — decomposição lenta com impacto físico-químico mínimo. Estrutura e comportamento químico previsíveis por longo prazo.' },
+      { label: 'D6 — Alta Estabilidade',                 texto: 'Substrato predominantemente mineral — transformações estruturais e físico-químicas mínimas. pH e CTC praticamente estáveis ao longo dos anos.' },
+      { label: 'D7 — Inércia Estrutural',                texto: 'Sem transformação estrutural ou físico-química relevante. pH, CTC e porosidade permanecem estáveis indefinidamente. A formulação inicial determina permanentemente as propriedades do substrato.' },
+    ],
+    note: 'Q3 (absorvente orgânico) decompõe-se mais rapidamente e fragmenta partículas com maior impacto no perfil G. Q4 (drenante orgânico) decompõe-se mais lentamente. O modelo diferencia os dois na composição do índice Rd.',
+  },
+  diagrama: {
+    color: '#e8c96a', bg: 'rgba(232,201,106,.12)',
+    tag:   'Diagrama Estrutural',
+    title: 'Como ler e usar o diagrama',
+    body: ['O Diagrama Estrutural mostra graficamente para onde cada componente "puxa" a mistura — e onde o substrato se posiciona no espaço hidráulico-estrutural. Após definir a composição, experimente alterar a granulometria dos componentes: isso pode mudar drasticamente o comportamento para uma mesma fórmula.'],
+    variacoes: [
+      { label: '★ B* — Baricentro Final (asterisco amarelo)', texto: 'O ponto mais importante do diagrama. Representa a tendência real de comportamento do substrato considerando composição, granulometria e degradabilidade juntos.' },
+      { label: '▲ Bs — Triângulo roxo',   texto: 'Baricentro de composição pura — mostra a natureza dos componentes sem considerar granulometria. Reflete apenas as proporções e os quadrantes dos ingredientes.' },
+      { label: '● B — Círculo branco',    texto: 'Baricentro bruto — tendência das quantidades ponderadas por percentual. Ponto de partida antes de qualquer correção granulométrica.' },
+      { label: '■ Bg — Quadrado azul',    texto: 'Baricentro granulométrico — mostra a tendência após aplicar a correção de granulometria (índice Ig). Revela como o tamanho das partículas desloca o comportamento hidráulico.' },
+    ],
+    note: 'Você pode arrastar os pontos dos vetores no diagrama para ajustes finos de granulometria interativamente — observe como B* se desloca em tempo real.',
+  },
+  componentes: {
+    color: '#6fcf7a', bg: 'rgba(111,207,122,.12)',
+    tag:   'Entrada de Componentes',
+    title: 'Como preencher a lista de componentes',
+    body: ['Você pode adicionar quantos componentes quiser e de qualquer combinação de quadrantes — inclusive formulações com apenas um quadrante. Se um mesmo material tem diferentes granulometrias (por exemplo, pó + grão), adicione-o como duas entradas separadas. Isso permite avaliar como a distribuição granulométrica interna afeta o comportamento do substrato.'],
+    variacoes: [
+      { label: 'Nome',               texto: 'Livre — use o nome que preferir. Pode ser o nome comercial ou técnico. Clique no nome para editar.' },
+      { label: 'Porcentagem (%)',    texto: 'Proporção em volume na mistura. A soma deve chegar a 100%. Se estiver diferente, o modelo ajusta automaticamente o componente de maior percentual ao clicar em Calcular.' },
+      { label: 'Classe (Quadrante)', texto: 'Define o comportamento estrutural — Q1 (drenante mineral), Q2 (absorvente mineral), Q3 (absorvente orgânico) ou Q4 (drenante orgânico). Clique nos quadrantes acima para entender cada classe.' },
+      { label: 'Granulometria (mm)', texto: 'Tamanho médio da partícula em milímetros. Usada para calcular Ig e Icd. Se pulverizado ou desconhecido, use 0,1 mm — o modelo aceita sem prejuízo ao cálculo.' },
+    ],
+    note: 'Clique nos quadrantes Q1–Q4 acima para entender o comportamento estrutural de cada classe antes de classificar seus componentes.',
+  },
+  sensibilidade: {
+    color: '#6ab4e8', bg: 'rgba(106,180,232,.12)',
+    tag:   'Análise de Sensibilidade',
+    title: 'Como usar a tabela para corrigir sua mistura',
+    body: ['A Análise de Sensibilidade simula o efeito de adicionar +10% de cada componente ao volume total. Os valores ΔX e ΔY mostram para onde o baricentro B* se deslocaria. Na prática: se você tem 1 litro de substrato formulado e adiciona 0,1 L de um componente, o deslocamento previsto na tabela representa o efeito esperado na estrutura.'],
+    variacoes: [
+      { label: 'ΔX positivo → mais drenante',   texto: 'Adicionar mais deste componente desloca o substrato para o lado drenante. Use quando quiser aumentar a aeração, reduzir o tempo de saturação ou corrigir um substrato excessivamente absorvente.' },
+      { label: 'ΔX negativo → mais absorvente',  texto: 'Adicionar mais deste componente aumenta a retenção hídrica. Use quando o substrato estiver drenando rápido demais ou quando a espécie exigir maior umidade disponível.' },
+      { label: 'ΔY positivo → mais mineral',    texto: 'O componente puxa a estrutura para o lado mineral, aumentando a estabilidade e reduzindo a degradabilidade ao longo do tempo.' },
+      { label: 'ΔY negativo → mais orgânico',   texto: 'O componente aumenta a fração orgânica, favorecendo atividade biológica e retenção, mas reduzindo estabilidade estrutural de longo prazo.' },
+    ],
+    note: 'A coluna Influência mostra a magnitude total do deslocamento (|ΔX| + |ΔY|). Componentes com maior influência são os mais eficazes para corrigir a formulação. Componentes com influência baixa têm efeito marginal mesmo em volumes maiores.',
+  },
+};
+}
+function openInterpPopup(key) {
+  const d = getInterpPopupData()[key];
+  if (!d) return;
+  const content = document.getElementById('qPopupContent');
+  const vars = d.variacoes.map(v => `
+    <div style="margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:5px;border-left:2px solid ${d.color}44">
+      <div style="font-size:9px;color:${d.color};letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${v.label}</div>
+      <div style="font-size:10.5px;color:var(--text);line-height:1.65">${v.texto}</div>
+    </div>`).join('');
+  content.innerHTML = `
+    <div class="q-popup-tag" style="background:${d.bg};color:${d.color};border:1px solid ${d.color}44">${d.tag}</div>
+    <h2>${d.title}</h2>
+    ${d.body.map(p => `<p>${p}</p>`).join('')}
+    <div class="pop-divider"></div>
+    ${vars}
+    <div class="pop-note">${d.note}</div>
+  `;
+  document.getElementById('qPopupOverlay').classList.add('open');
+  document.addEventListener('keydown', handleEsc);
+}
+function toggleSection(bodyId, chevronId) {
+  const body = document.getElementById(bodyId);
+  const chev = document.getElementById(chevronId);
+  const header = chev ? chev.closest('.collapsible-header') : null;
+  const isOpen = body.classList.toggle('open');
+  chev.classList.toggle('open', isOpen);
+  if (header) header.classList.toggle('open', isOpen);
+}
+let _isDragging = false;
+
+function $ra(){return document.getElementById('resultsArea');}
+let _liveRecalcTimer=null;
+function liveRecalcDebounced(){
+  clearTimeout(_liveRecalcTimer);
+  _liveRecalcTimer=setTimeout(liveRecalc,120);
+}
+
+function liveRecalc(){
+  const valid = ingredients.filter(i=>i.pct!=null&&!isNaN(i.pct));
+  if(valid.length<1) return;
+  const total=valid.reduce((s,i)=>s+i.pct,0);
+  // Com múltiplos ingredientes exige total próximo de 100; com 1 ingrediente normaliza e roda
+  if(valid.length>1 && Math.abs(total-100)>2) return;
+  const normalized = valid.length===1
+    ? [{...valid[0], pct:100}]
+    : valid;
+  const m=computeModel(normalized);
+  renderResults(m,normalized);
+  if(_isDragging){
+    updateDiagram(m,normalized);
+    updateSensitivity(m,normalized);
+  } else {
+    drawDiagram(m,normalized);
+    setupChart1Drag(m,normalized);
+    updateSensitivity(m,normalized);
+  }
+}
+document.getElementById('btnCalc').onclick=()=>{
+  if(ingredients.length<1){alert('Insira pelo menos 1 componente.');return;}
+  const total=ingredients.reduce((s,i)=>s+i.pct,0);
+  if(total<=0){alert('Insira percentuais maiores que zero.');return;}
+  if(Math.abs(total-100)>0.01){
+    const diff=parseFloat((100-total).toFixed(4));
+    const maxIdx=ingredients.reduce((mi,ing,ii,arr)=>ing.pct>arr[mi].pct?ii:mi,0);
+    ingredients[maxIdx].pct=parseFloat((ingredients[maxIdx].pct+diff).toFixed(4));
+    renderIngredients();
+  }
+  const m=computeModel(ingredients);
+  document.getElementById('emptyState').classList.add('hidden');
+  $ra().classList.remove('hidden');
+  renderResults(m,ingredients);
+  requestAnimationFrame(()=>{
+    drawDiagram(m,ingredients);
+    setupChart1Drag(m,ingredients);
+    drawSensitivity(m,ingredients);
+  });
+  historySave(ingredients);
+};
+renderIngredients();
+function setLang() {
+  renderHistory();
+}
+const HISTORY_KEY = 'substrato_history_v1';
+const HISTORY_MAX = 5;
+function _storage() {
+  try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return localStorage; }
+  catch(e) { return sessionStorage; }
+}
+function historyLoad() {
+  try { return JSON.parse(_storage().getItem(HISTORY_KEY)) || []; }
+  catch(e) { return []; }
+}
+function historySave(ings) {
+  const list = historyLoad();
+  const now  = new Date();
+  const label= now.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})
+             + ' ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const top = [...ings].sort((a,b)=>b.pct-a.pct).slice(0,3)
+    .map(i=>`${i.pct.toFixed(0)}% ${i.name}`).join(' · ');
+  const qPcts = {Q1:0,Q2:0,Q3:0,Q4:0};
+  ings.forEach(i=>{ qPcts[i.q]=(qPcts[i.q]||0)+i.pct; });
+  const domQ = Object.entries(qPcts).sort((a,b)=>b[1]-a[1])[0][0];
+  const entry = { id: Date.now(), label, top, domQ, ings: JSON.parse(JSON.stringify(ings)) };
+  list.unshift(entry);
+  if(list.length > HISTORY_MAX) list.length = HISTORY_MAX;
+  _storage().setItem(HISTORY_KEY, JSON.stringify(list));
+  renderHistory();
+}
+function historyClear() {
+  _storage().removeItem(HISTORY_KEY);
+  renderHistory();
+}
+function historyDelete(id, e) {
+  e.stopPropagation();
+  const list = historyLoad().filter(h=>h.id!==id);
+  _storage().setItem(HISTORY_KEY, JSON.stringify(list));
+  renderHistory();
+}
+function historyRestore(ingsJson) {
+  ingredients = JSON.parse(ingsJson);
+  renderIngredients();
+  updateTotal();
+  const m = computeModel(ingredients);
+  document.getElementById('emptyState').classList.add('hidden');
+  $ra().classList.remove('hidden');
+  renderResults(m, ingredients);
+  drawDiagram(m, ingredients);
+  setupChart1Drag(m, ingredients);
+  drawSensitivity(m, ingredients);
+}
+function renderHistory() {
+  const list = historyLoad();
+  const el   = document.getElementById('historyList');
+  const btn = document.getElementById('btnHistClear');
+  if(!list.length){ el.innerHTML=`<div class="history-empty">nenhum cálculo ainda</div>`; if(btn) btn.style.display='none'; return; }
+  if(btn) btn.style.display='block';
+  el.innerHTML = list.map(h=>`
+    <div class="history-item" onclick="historyRestore(this.dataset.ings)" data-ings='${JSON.stringify(h.ings).replace(/'/g,"&#39;")}'>
+      <div class="history-dot" style="background:${QCOLORS[h.domQ]}"></div>
+      <div class="history-info">
+        <div class="history-name">${h.top}</div>
+        <div class="history-meta">${h.label} · ${h.ings.length} comp.</div>
+      </div>
+      <div class="history-actions">
+        <span class="history-restore">↺</span>
+        <span class="history-del" onclick="historyDelete(${h.id},event)" title="remover">×</span>
+      </div>
+    </div>`).join('');
+}
+renderHistory();
+setLang('pt');
+function openSobrePopup() {
+  const el = document.getElementById('sobrePopupOverlay');
+  el.style.display = 'flex';
+  document.addEventListener('keydown', _sobreEsc);
+}
+function closeSobrePopup() {
+  document.getElementById('sobrePopupOverlay').style.display = 'none';
+  document.removeEventListener('keydown', _sobreEsc);
+}
+function _sobreEsc(e) { if (e.key === 'Escape') closeSobrePopup(); }
+document.getElementById('btnPdf').onclick=()=>{
+  if($ra().classList.contains('hidden')){
+    alert('Calcule o modelo primeiro.');return;
+  }
+  // Garantir que análise de sensibilidade está aberta antes de imprimir
+  const sw = document.getElementById('sensTableWrap');
+  const sc = document.getElementById('chevronSens');
+  if(sw && !sw.classList.contains('open')){
+    sw.classList.add('open');
+    if(sc) sc.classList.add('open');
+  }
+  window.print();
+};</script><!-- Popup overlay — fora de qualquer contexto de stacking --><div class="q-popup-overlay" id="qPopupOverlay" onclick="closePopupOutside(event)"><div class="q-popup" id="qPopup"><button class="q-popup-close" onclick="closePopup()">×</button><div id="qPopupContent"></div></div></div><!-- ── SOBRE O MODELO POPUP ───────────────────────────────────────────────── --><div id="sobrePopupOverlay" onclick="closeSobrePopup()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box"><div onclick="event.stopPropagation()" style="background:#111811;border:1px solid #253025;border-radius:10px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:28px 28px 24px;position:relative;font-family:'DM Mono',monospace"><button onclick="closeSobrePopup()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#4a5a4a;font-size:18px;cursor:pointer;line-height:1" title="Fechar">✕</button><!-- Author card --><div style="display:flex;gap:18px;align-items:center;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid #253025"><img src="foto_joao.png" alt="João Giovanni" style="width:144px;height:144px;border-radius:50%;object-fit:cover;border:2px solid #2a4a2a;flex-shrink:0"><div><div style="font-family:'Fraunces',serif;font-size:16px;font-weight:400;color:#cdd4cd;margin-bottom:3px">João Giovanni</div><div style="font-size:10px;color:#6fcf7a;letter-spacing:.5px;margin-bottom:4px">Engenheiro Agrônomo · Entusiasta da arte do bonsai</div><div style="font-size:9.5px;color:#7a8a7a;line-height:1.55">Especialista em plantas ornamentais e estresse vegetal<br>Escola Superior de Agricultura Luiz de Queiroz (ESALQ) — Universidade de São Paulo (USP) — Brasil</div></div></div><!-- Title --><div style="font-family:'Fraunces',serif;font-size:15px;font-weight:300;color:#cdd4cd;margin-bottom:14px">Sobre o Modelo Estrutural de Substratos</div><!-- Body text --><div style="font-size:10.5px;color:#9aaa9a;line-height:1.75;display:flex;flex-direction:column;gap:12px"><p style="margin:0">O Modelo Estrutural de Substratos foi desenvolvido pelo Engenheiro Agrônomo João Giovanni com o objetivo de facilitar a compreensão de relações físico-químicas presentes em misturas de substratos utilizadas no cultivo de plantas.</p><p style="margin:0">O comportamento de um substrato pode ser descrito de forma mais completa em um espaço multidimensional. Nesse espaço, diferentes propriedades dos componentes podem ser representadas como variáveis ou vetores estruturais. Entre essas propriedades estão granulometria, degradabilidade, reatividade química, pH, capacidade de troca catiônica e outras características que influenciam o funcionamento físico e químico da mistura.</p><p style="margin:0">O modelo apresentado neste relatório constitui uma simplificação desse sistema mais amplo. A abordagem utilizada concentra a análise nos vetores estruturais relacionados à drenagem, retenção hídrica e natureza mineral ou orgânica dos componentes. A partir da interação entre esses vetores, o modelo identifica tendências estruturais do substrato e permite visualizar como diferentes ingredientes influenciam o comportamento da mistura.</p><p style="margin:0">Essa representação tem caráter didático e busca tornar mais acessível a interpretação da estrutura do substrato para cultivadores e colecionadores de plantas. Isso é particularmente relevante no cultivo de bonsai, no qual o desempenho do substrato exerce influência direta sobre a aeração radicular, a disponibilidade de água e a estabilidade estrutural da mistura.</p><p style="margin:0;padding:10px 14px;background:rgba(111,207,122,.07);border-left:2px solid #6fcf7a44;border-radius:4px;color:#8a9a8a">O modelo é disponibilizado como uma ferramenta gratuita com finalidade educativa. Seu objetivo é apoiar a compreensão e o aprimoramento de formulações de substrato por pessoas interessadas no cultivo técnico de plantas.</p></div><!-- Footer links --><div style="margin-top:20px;padding-top:14px;border-top:1px solid #253025;display:flex;gap:16px;flex-wrap:wrap;font-size:9px;color:#4a5a4a;letter-spacing:.5px"><span>🌿 www.cultivoornamental.com.br</span><span>📸 @joao.giovanni90</span><span>📱 (19) 99758-3777</span></div></div></div></body></html>
